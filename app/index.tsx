@@ -1,0 +1,559 @@
+import React, { useState, useCallback } from "react";
+import { View, Text, Image, TouchableOpacity, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { Calendar, BarChart2, Users, Shield, CheckCircle, Plus } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface Feature {
+  icon: React.JSX.Element;
+  title: string;
+  description: string;
+}
+
+interface FAQ {
+  question: string;
+  answer: string;
+}
+
+const LandingScreen: React.FC = () => {
+  const router = useRouter();
+  const [activeFeature, setActiveFeature] = useState<number>(0);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const features: Feature[] = [
+    {
+      icon: <Calendar color="#3B82F6" size={24} />,
+      title: "Easy Leave Requests",
+      description: "Apply for leave in seconds with our intuitive interface",
+    },
+    {
+      icon: <BarChart2 color="#10B981" size={24} />,
+      title: "Track Usage",
+      description: "Visualize your leave patterns with interactive charts",
+    },
+    {
+      icon: <Users color="#8B5CF6" size={24} />,
+      title: "Team Coordination",
+      description: "See team availability and plan accordingly",
+    },
+    {
+      icon: <Shield color="#F59E0B" size={24} />,
+      title: "Secure & Reliable",
+      description: "Enterprise-grade security for your data",
+    },
+  ];
+
+  const faqs: FAQ[] = [
+    {
+      question: "How secure is my leave data?",
+      answer: "We use bank-level encryption and comply with data protection regulations."
+    },
+    {
+      question: "Can I integrate with existing HR systems?",
+      answer: "Yes! We offer seamless integration with popular HR platforms through our REST API."
+    },
+    {
+      question: "Is there a mobile app available?",
+      answer: "Our progressive web app works perfectly on all devices with native app-like experience."
+    },
+    {
+      question: "What kind of support do you offer?",
+      answer: "We provide 24/7 customer support via chat, email, and phone for all clients."
+    }
+  ];
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+
+  const nextFeature = () => {
+    setActiveFeature((prev) => (prev + 1) % features.length);
+  };
+
+  const prevFeature = () => {
+    setActiveFeature((prev) => (prev - 1 + features.length) % features.length);
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3B82F6"]}
+            tintColor="#3B82F6"
+          />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <Text style={styles.logo}>
+              Annual & Benefit
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push("/(auth)/login")}
+              style={styles.loginButton}
+            >
+              <Text style={styles.loginButtonText}>
+                Login
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text style={styles.heroTitle}>
+            Simplify Your Leave Management
+          </Text>
+          <Text style={styles.heroDescription}>
+            Track, request, and manage your leave entitlements with ease. All in one place.
+          </Text>
+
+          <View style={styles.imageContainer}>
+            <Image
+              source={{
+                uri: "https://images.unsplash.com/photo-1480694313141-fce5e697ee25?w=900&auto=format&fit=crop&q=60",
+              }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+          </View>
+
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/register")}
+            style={styles.primaryButton}
+          >
+            <Text style={styles.primaryButtonText}>Get Started</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/login")}
+            style={styles.secondaryButton}
+          >
+            <Text style={styles.secondaryButtonText}>
+              I Already Have an Account
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.freeTrial}>
+            <CheckCircle size={16} color="#10B981" />
+            <Text style={styles.freeTrialText}>
+              No credit card required • Free trial
+            </Text>
+          </View>
+        </View>      
+
+        {/* Interactive Features Section */}
+        <View style={styles.featuresSection}>
+          <Text style={styles.sectionTitle}>
+            Why Choose Annual & Benefit?
+          </Text>
+
+          {/* Feature Carousel */}
+          <View style={styles.carouselContainer}>
+            <View style={styles.carouselContent}>
+              <View style={styles.featureIconContainer}>
+                {features[activeFeature].icon}
+              </View>
+              <View style={styles.featureText}>
+                <Text style={styles.featureCarouselTitle}>
+                  {features[activeFeature].title}
+                </Text>
+                <Text style={styles.featureCarouselDescription}>
+                  {features[activeFeature].description}
+                </Text>
+              </View>
+            </View>
+
+            {/* Navigation Controls */}
+            <View style={styles.carouselControls}>
+              <View style={styles.dotsContainer}>
+                {features.map((_, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => setActiveFeature(index)}
+                    style={[
+                      styles.dot,
+                      index === activeFeature ? styles.activeDot : styles.inactiveDot
+                    ]}
+                  />
+                ))}
+              </View>
+              
+              <View style={styles.arrowControls}>
+                <TouchableOpacity 
+                  onPress={prevFeature}
+                  style={styles.arrowButton}
+                >
+                  <Text style={styles.arrowText}>←</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={nextFeature}
+                  style={styles.arrowButton}
+                >
+                  <Text style={styles.arrowText}>→</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* All Features Grid */}
+          <View style={styles.featuresGrid}>
+            {features.map((feature, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setActiveFeature(index)}
+                style={[
+                  styles.featureCard,
+                  activeFeature === index && styles.activeFeatureCard
+                ]}
+              >
+                <View style={styles.featureCardIcon}>
+                  {feature.icon}
+                </View>
+                <Text style={styles.featureCardTitle}>
+                  {feature.title}
+                </Text>
+                <Text style={styles.featureCardDescription}>
+                  {feature.description}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* FAQ Section */}
+        <View style={styles.faqSection}>
+          <Text style={styles.sectionTitle}>
+            Frequently Asked Questions
+          </Text>
+
+          <View style={styles.faqContainer}>
+            {faqs.map((faq, index) => (
+              <View 
+                key={index}
+                style={styles.faqItem}
+              >
+                <View style={styles.faqContent}>
+                  <View style={styles.faqIcon}>
+                    <Plus size={16} color="#3B82F6" />
+                  </View>
+                  <View style={styles.faqText}>
+                    <Text style={styles.faqQuestion}>
+                      {faq.question}
+                    </Text>
+                    <Text style={styles.faqAnswer}>
+                      {faq.answer}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+        
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            © 2025 Annual & Benefit. All rights reserved.
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#EFF6FF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    paddingTop: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    backgroundColor: '#EFF6FF',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2563EB',
+  },
+  loginButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  loginButtonText: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  heroSection: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 48,
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  heroDescription: {
+    fontSize: 18,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 32,
+    maxWidth: 400,
+  },
+  imageContainer: {
+    width: '100%',
+    height: 256,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 32,
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  primaryButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  freeTrial: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  freeTrialText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginLeft: 8,
+  },
+  featuresSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+    backgroundColor: '#F9FAFB',
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  carouselContainer: {
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    backgroundColor: 'white',
+    marginBottom: 24,
+  },
+  carouselContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  featureIconContainer: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#DBEAFE',
+    marginRight: 16,
+  },
+  featureText: {
+    flex: 1,
+  },
+  featureCarouselTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  featureCarouselDescription: {
+    color: '#6B7280',
+  },
+  carouselControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  activeDot: {
+    backgroundColor: '#2563EB',
+  },
+  inactiveDot: {
+    backgroundColor: '#D1D5DB',
+  },
+  arrowControls: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  arrowButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowText: {
+    color: '#6B7280',
+  },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  featureCard: {
+    flex: 1,
+    minWidth: '45%',
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  activeFeatureCard: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
+  },
+  featureCardIcon: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#DBEAFE',
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  featureCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  featureCardDescription: {
+    color: '#6B7280',
+    fontSize: 12,
+  },
+  faqSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+    backgroundColor: 'white',
+  },
+  faqContainer: {
+    gap: 16,
+  },
+  faqItem: {
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
+  },
+  faqContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  faqIcon: {
+    backgroundColor: '#DBEAFE',
+    padding: 4,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  faqText: {
+    flex: 1,
+  },
+  faqQuestion: {
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  faqAnswer: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  footer: {
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    backgroundColor: '#111827',
+  },
+  footerText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  footerSubtext: {
+    color: '#9CA3AF',
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 8,
+  },
+});
+
+export default LandingScreen;
