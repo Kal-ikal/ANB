@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { Calendar, BarChart2, Users, Shield, CheckCircle, Plus } from "lucide-react-native";
+import { Calendar, BarChart2, Users, Shield, Plus } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Feature {
@@ -97,59 +97,40 @@ const LandingScreen: React.FC = () => {
             <Text style={styles.logo}>
               Annual & Benefit
             </Text>
-            <TouchableOpacity
-              onPress={() => router.push("/(auth)/login")}
-              style={styles.loginButton}
-            >
-              <Text style={styles.loginButtonText}>
-                Login
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 
+      
+
+
         {/* Hero Section */}
-        <View style={styles.heroSection}>
-          <Text style={styles.heroTitle}>
-            Simplify Your Leave Management
-          </Text>
-          <Text style={styles.heroDescription}>
-            Track, request, and manage your leave entitlements with ease. All in one place.
-          </Text>
-
-          <View style={styles.imageContainer}>
-            <Image
-              source={{
-                uri: "https://images.unsplash.com/photo-1480694313141-fce5e697ee25?w=900&auto=format&fit=crop&q=60",
-              }}
-              style={styles.heroImage}
-              resizeMode="cover"
-            />
-          </View>
-
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/register")}
-            style={styles.primaryButton}
-          >
-            <Text style={styles.primaryButtonText}>Get Started</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/login")}
-            style={styles.secondaryButton}
-          >
-            <Text style={styles.secondaryButtonText}>
-              I Already Have an Account
+          <View style={styles.heroSection}>
+            <Text style={styles.heroTitle}>
+              Simplify Your Leave Management
             </Text>
-          </TouchableOpacity>
-
-          <View style={styles.freeTrial}>
-            <CheckCircle size={16} color="#10B981" />
-            <Text style={styles.freeTrialText}>
-              No credit card required • Free trial
+            <Text style={styles.heroDescription}>
+              Track, request, and manage your leave entitlements with ease. All in one place.
             </Text>
+
+          {/* Container khusus untuk image dan button dengan border seperti feature card */}
+          <View style={styles.heroContentContainer}>
+            <View style={styles.imageContainer}>
+              <Image
+                source={{
+                  uri: "https://images.unsplash.com/photo-1480694313141-fce5e697ee25?w=900&auto=format&fit=crop&q=60",
+                }}
+                style={styles.heroImage}
+                resizeMode="cover"
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push("/(auth)/login")}
+              style={styles.primaryButton}
+            >
+              <Text style={styles.primaryButtonText}>Get Started</Text>
+            </TouchableOpacity>
           </View>
-        </View>      
+        </View>     
 
         {/* Interactive Features Section */}
         <View style={styles.featuresSection}>
@@ -311,7 +292,7 @@ const styles = StyleSheet.create({
   heroSection: {
     paddingHorizontal: 24,
     paddingTop: 32,
-    paddingBottom: 48,
+    paddingBottom: 32,
     alignItems: 'center',
     backgroundColor: 'white',
   },
@@ -329,12 +310,25 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     maxWidth: 400,
   },
+  heroContentContainer: {
+    width: '100%',
+    borderRadius: 12,
+    padding: 20,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   imageContainer: {
     width: '100%',
-    height: 256,
-    borderRadius: 16,
+    height: 200,
+    borderRadius: 8,
     overflow: 'hidden',
-    marginBottom: 32,
+    marginBottom: 20,
   },
   heroImage: {
     width: '100%',
@@ -343,16 +337,16 @@ const styles = StyleSheet.create({
   primaryButton: {
     width: '100%',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     backgroundColor: '#2563EB',
     alignItems: 'center',
-    marginBottom: 16,
   },
   primaryButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },
+ 
   secondaryButton: {
     width: '100%',
     paddingVertical: 16,
@@ -380,6 +374,7 @@ const styles = StyleSheet.create({
   featuresSection: {
     paddingHorizontal: 24,
     paddingBottom: 48,
+    paddingTop: 24,
     backgroundColor: '#F9FAFB',
   },
   sectionTitle: {
@@ -554,6 +549,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
   },
+ heroContainer: {
+    padding: 20,
+    borderRadius: 24,
+    marginHorizontal: 20,
+    marginBottom: 50,
+    backgroundColor: '#F3F4F6', // abu-abu terang
+    borderWidth: 2,
+    borderColor: '#9CA3AF', // abu-abu sedang agar tegas
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+    },
+
 });
 
 export default LandingScreen;

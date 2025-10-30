@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { useRouter } from "expo-router";
 import {
   Edit3,
   Calendar,
@@ -7,11 +8,17 @@ import {
   Mail,
   MapPin,
   Building,
+  ChevronLeft,
 } from "lucide-react-native";
-import { JSX } from "react/jsx-runtime";
+import { LinearGradient } from "expo-linear-gradient";
+import { cssInterop } from "nativewind";
 
-export default function ProfileScreen(): JSX.Element {
+cssInterop(LinearGradient, { className: "style" });
+
+export default function ProfileScreen() {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isDarkMode] = useState(false); // atau dari context/global state
 
   const employeeData = {
     name: "Alex Morgan",
@@ -65,19 +72,43 @@ export default function ProfileScreen(): JSX.Element {
   ];
 
   return (
-    <View className="flex-1 bg-gray-100 dark:bg-gray-900">
+    <View className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}>
+      {/* Header dengan Back Button */}
+      <LinearGradient
+        colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
+        className="p-6 rounded-b-3xl"
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View className="flex-row items-center mt-10">
+          <TouchableOpacity onPress={() => router.back()} className="mr-4">
+            <ChevronLeft color="white" size={24} />
+          </TouchableOpacity>
+          <View className="flex-1">
+            <Text className="text-white text-xl font-bold">
+              My Profile
+            </Text>
+            <Text className="text-blue-100 text-sm mt-1">
+              Personal information and leave history
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Main Content */}
       <ScrollView
-        className="flex-1 px-4 py-6"
-        contentContainerStyle={{ paddingBottom: 24 }} // Menambah padding di bawah
+        className="flex-1 px-4 mt-6"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 34 }}
       >
         {/* Profile Header */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm">
+        <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 mb-6 shadow-md`}>
           <View className="flex-row items-center justify-between mb-6">
-            <Text className="text-2xl font-bold text-gray-800 dark:text-white">
+            <Text className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
               My Profile
             </Text>
             <TouchableOpacity
-              className="bg-blue-500 rounded-full p-3"
+              className={`${isDarkMode ? "bg-blue-600" : "bg-blue-500"} rounded-full p-3`}
               onPress={() => setIsEditing(!isEditing)}
             >
               <Edit3 size={20} color="white" />
@@ -89,36 +120,36 @@ export default function ProfileScreen(): JSX.Element {
               source={{ uri: employeeData.avatar }}
               className="w-24 h-24 rounded-full mb-4 border-4 border-blue-500"
             />
-            <Text className="text-xl font-bold text-gray-800 dark:text-white">
+            <Text className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
               {employeeData.name}
             </Text>
-            <Text className="text-gray-600 dark:text-gray-300">
+            <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
               {employeeData.position}
             </Text>
           </View>
 
-          <View className="flex-row justify-around border-t border-gray-200 dark:border-gray-700 pt-6">
+          <View className="flex-row justify-around border-t pt-6" style={{ borderColor: isDarkMode ? "#374151" : "#E5E7EB" }}>
             <View className="items-center">
-              <Text className="text-lg font-bold text-gray-800 dark:text-white">
+              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
                 7.5
               </Text>
-              <Text className="text-gray-600 dark:text-gray-300 text-sm">
+              <Text className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
                 Years
               </Text>
             </View>
             <View className="items-center">
-              <Text className="text-lg font-bold text-gray-800 dark:text-white">
+              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
                 Engineering
               </Text>
-              <Text className="text-gray-600 dark:text-gray-300 text-sm">
+              <Text className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
                 Department
               </Text>
             </View>
             <View className="items-center">
-              <Text className="text-lg font-bold text-gray-800 dark:text-white">
+              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
                 EMP-00789
               </Text>
-              <Text className="text-gray-600 dark:text-gray-300 text-sm">
+              <Text className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
                 ID
               </Text>
             </View>
@@ -126,67 +157,67 @@ export default function ProfileScreen(): JSX.Element {
         </View>
 
         {/* Personal Information */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm">
-          <Text className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+        <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 mb-6 shadow-md`}>
+          <Text className={`text-lg font-bold mb-4 ${isDarkMode ? "text-white" : "text-gray-800"}`}>
             Personal Information
           </Text>
 
           <View className="space-y-4">
             <View className="flex-row items-center">
-              <Mail size={20} color="#3B82F6" className="mr-3" />
+              <Mail size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   Email
                 </Text>
-                <Text className="text-gray-800 dark:text-white">
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>
                   {employeeData.email}
                 </Text>
               </View>
             </View>
 
             <View className="flex-row items-center">
-              <Phone size={20} color="#3B82F6" className="mr-3" />
+              <Phone size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   Phone
                 </Text>
-                <Text className="text-gray-800 dark:text-white">
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>
                   {employeeData.phone}
                 </Text>
               </View>
             </View>
 
             <View className="flex-row items-center">
-              <MapPin size={20} color="#3B82F6" className="mr-3" />
+              <MapPin size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   Address
                 </Text>
-                <Text className="text-gray-800 dark:text-white">
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>
                   {employeeData.address}
                 </Text>
               </View>
             </View>
 
             <View className="flex-row items-center">
-              <Calendar size={20} color="#3B82F6" className="mr-3" />
+              <Calendar size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   Join Date
                 </Text>
-                <Text className="text-gray-800 dark:text-white">
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>
                   {employeeData.joinDate}
                 </Text>
               </View>
             </View>
 
             <View className="flex-row items-center">
-              <Building size={20} color="#3B82F6" className="mr-3" />
+              <Building size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
-                <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   Department
                 </Text>
-                <Text className="text-gray-800 dark:text-white">
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>
                   {employeeData.department}
                 </Text>
               </View>
@@ -195,9 +226,9 @@ export default function ProfileScreen(): JSX.Element {
         </View>
 
         {/* Leave History */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+        <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 shadow-md`}>
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-lg font-bold text-gray-800 dark:text-white">
+            <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
               Leave History
             </Text>
             <TouchableOpacity>
@@ -210,16 +241,15 @@ export default function ProfileScreen(): JSX.Element {
               <View
                 key={leave.id}
                 className={`flex-row justify-between items-center pb-4 ${
-                  index !== leaveHistory.length - 1
-                    ? "border-b border-gray-100 dark:border-gray-700"
-                    : ""
+                  index !== leaveHistory.length - 1 ? "border-b" : ""
                 }`}
+                style={{ borderColor: isDarkMode ? "#374151" : "#E5E7EB" }}
               >
                 <View>
-                  <Text className="font-medium text-gray-800 dark:text-white">
+                  <Text className={`font-medium ${isDarkMode ? "text-white" : "text-gray-800"}`}>
                     {leave.type}
                   </Text>
-                  <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                  <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                     {leave.startDate} to {leave.endDate}
                   </Text>
                 </View>
@@ -227,10 +257,10 @@ export default function ProfileScreen(): JSX.Element {
                   <Text
                     className={`px-3 py-1 rounded-full text-sm font-medium ${
                       leave.status === "Approved"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        ? isDarkMode ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"
                         : leave.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        ? isDarkMode ? "bg-yellow-900 text-yellow-200" : "bg-yellow-100 text-yellow-800"
+                        : isDarkMode ? "bg-red-900 text-red-200" : "bg-red-100 text-red-800"
                     }`}
                   >
                     {leave.status}

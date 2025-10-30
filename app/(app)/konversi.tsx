@@ -64,7 +64,7 @@ export default function LeaveConversionScreen() {
             Alert.alert(
               "Conversion Requested",
               "Your leave conversion request has been submitted successfully. You will receive a confirmation email shortly.",
-              [{ text: "OK", onPress: () => router.push("/") }]
+              [{ text: "OK", onPress: () => router.push("../(app)/home") }]
             );
           },
         },
@@ -90,7 +90,7 @@ export default function LeaveConversionScreen() {
         end={{ x: 1, y: 1 }}
       >
         <View className="flex-row items-center mt-10">
-          <TouchableOpacity onPress={() => router.push("/")} className="mr-4">
+          <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <ChevronLeft color="white" size={24} />
           </TouchableOpacity>
           <View>
@@ -108,7 +108,7 @@ export default function LeaveConversionScreen() {
       <ScrollView
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }} // Menambah padding di bawah
+        contentContainerStyle={{ paddingBottom: 34 }} // Menambah padding di bawah
       >
         {/* Eligible Days */}
         <View
@@ -156,7 +156,7 @@ export default function LeaveConversionScreen() {
             ))}
           </View>
 
-          <View className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4">
+          <View className={`${isDarkMode ? "bg-blue-900" : "bg-blue-50"} rounded-xl p-4`}>
             <View className="flex-row justify-between">
               <Text className="text-blue-800 dark:text-blue-200 font-medium">
                 Total Eligible Days
@@ -336,7 +336,7 @@ export default function LeaveConversionScreen() {
                 <CheckCircle
                   color={isDarkMode ? "#10B981" : "#059669"}
                   size={20}
-                  className="mt-0.5"
+                  style={{ marginTop: 2}}
                 />
                 <Text
                   className={`${
