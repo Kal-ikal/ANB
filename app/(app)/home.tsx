@@ -1,27 +1,38 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Switch, Dimensions } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Dimensions,
+} from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
-import { 
-  Calendar, 
-  FileText, 
-  DollarSign, 
-  User, 
-  Settings, 
-  Plus, 
-  TrendingUp, 
+import {
+  Calendar,
+  FileText,
+  DollarSign,
+  User,
+  Settings,
+  TrendingUp,
   TrendingDown,
   Sun,
-  Moon
+  Moon,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context"; // 👈 1. IMPORT Insets
+import { StatusBar } from "expo-status-bar"; // 👈 2. IMPORT Status Bar
 
+// ✅ Pastikan LinearGradient bisa pakai className
 cssInterop(LinearGradient, { className: "style" });
+
+// ✅ Nonaktifkan interop pada Switch supaya animasi native tidak terganggu
+cssInterop(Switch, { className: false });
 
 const screenWidth = Dimensions.get("window").width;
 
-// Definisikan type untuk quick actions
 type QuickAction = {
   id: number;
   title: string;
@@ -30,12 +41,19 @@ type QuickAction = {
 };
 
 export default function DashboardScreen() {
+  const insets = useSafeAreaInsets(); // 👈 3. DAPATKAN nilai insets (padding aman)
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [switchReady, setSwitchReady] = useState(false);
   const router = useRouter();
 
+  // ✅ Delay kecil supaya layout siap sebelum Switch dirender
+  useEffect(() => {
+    const t = setTimeout(() => setSwitchReady(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
   const leaveBalances = [
-    { type: "Annual", days: 15, 
-      used: 7, color: "#3B82F6" },
+    { type: "Annual", days: 15, used: 7, color: "#3B82F6" },
     { type: "Sick", days: 10, used: 2, color: "#10B981" },
     { type: "Special", days: 5, used: 1, color: "#8B5CF6" },
   ];
@@ -55,89 +73,122 @@ export default function DashboardScreen() {
     { value: 1, label: "Special" },
   ];
 
-  // Quick actions dengan type yang spesifik
   const quickActions: QuickAction[] = [
-    { 
-      id: 1, 
-      title: "Apply Leave", 
+    {
+      id: 1,
+      title: "Apply Leave",
       icon: <FileText color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/pengajuan"
+      link: "/pengajuan",
     },
-    { 
-      id: 2, 
-      title: "Convert Leave", 
+    {
+      id: 2,
+      title: "Convert Leave",
       icon: <DollarSign color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/konversi"
+      link: "/konversi",
     },
-    { 
-      id: 3, 
-      title: "My Profile", 
+    {
+      id: 3,
+      title: "My Profile",
       icon: <User color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/profile"
+      link: "/profile",
     },
-    { 
-      id: 4, 
-      title: "Settings", 
+    {
+      id: 4,
+      title: "Settings",
       icon: <Settings color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/settings"
+      link: "/settings",
     },
   ];
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
-  // Fungsi untuk handle press button
-  const handleQuickActionPress = (link: QuickAction["link"]) => {
-    router.push(link);
-  };
+  const handleQuickActionPress = (link: QuickAction["link"]) => router.push(link);
 
   return (
-    <View className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}>
+    <View
+      className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
+      // 👈 4. BERI PADDING BAWAH agar aman dari navigasi sistem
+      style={{
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+    >
+      {/* 👈 5. SET status bar text menjadi "light" (putih) */}
+      <StatusBar style="light" />
+
       {/* Header */}
       <LinearGradient
         colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
-        className="p-6 rounded-b-3xl"
+        // 👈 6. UBAH className (dari p-6) & TAMBAHKAN style
+        className="px-6 pb-6 rounded-b-3xl"
+        style={{ paddingTop: insets.top + 24 }} // Padding atas = area status bar + 24px
       >
-        <View className="flex-row justify-between items-center mt-10">
+        {/* 👈 7. HAPUS `mt-10` */}
+        <View className="flex-row justify-between items-center">
           <View>
             <Text className="text-white text-2xl font-bold">LeaveManager</Text>
-            <Text className="text-blue-100 text-sm mt-1">Welcome back, Sarah!</Text>
+            <Text className="text-blue-100 text-sm mt-1">
+              Welcome back, Sarah!
+            </Text>
           </View>
+
           <View className="flex-row items-center">
-            {isDarkMode ? <Moon color="white" size={20} /> : <Sun color="white" size={20} />}
-            <Switch
-              value={isDarkMode}
-              onValueChange={toggleTheme}
-              trackColor={{ false: "#D1D5DB", true: "#6B7280" }}
-              thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
-              className="ml-2"
-            />
+            {isDarkMode ? (
+              <Moon color="white" size={20} />
+            ) : (
+              <Sun color="white" size={20} />
+            )}
+
+            {/* ✅ Animasi Switch akan selalu mulus, tidak freeze di awal */}
+            {switchReady && (
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleTheme}
+                trackColor={{ true: "#6B7280", false: "#D1D5DB" }}
+                thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
+                className="ml-2"
+              />
+            )}
           </View>
         </View>
       </LinearGradient>
 
       {/* Main Content */}
-      <ScrollView 
-        className="flex-1" 
+      <ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 34 }} // ⬅️ INI YANG DITAMBAHKAN
+        contentContainerStyle={{ paddingBottom: 80 }}
       >
         <View className="px-4 mt-6">
-          
           {/* Leave Balances */}
           <View className="mb-6">
-            <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} text-lg font-bold mb-4`}>
+            <Text
+              className={`${
+                isDarkMode ? "text-white" : "text-[#1A1D23]"
+              } text-lg font-bold mb-4`}
+            >
               Leave Balances
             </Text>
             <View className="flex-row flex-wrap gap-4">
               {leaveBalances.map((leave, index) => (
                 <View
                   key={index}
-                  className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-4 flex-1 min-w-[45%] shadow-md`}
+                  className={`${
+                    isDarkMode ? "bg-gray-800" : "bg-white"
+                  } rounded-xl p-4 flex-1 min-w-[45%] shadow-md`}
                 >
-                  <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-500"} text-sm`}>
+                  <Text
+                    className={`${
+                      isDarkMode ? "text-gray-300" : "text-gray-500"
+                    } text-sm`}
+                  >
                     {leave.type} Leave
                   </Text>
-                  <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} text-2xl font-bold mt-1`}>
+                  <Text
+                    className={`${
+                      isDarkMode ? "text-white" : "text-[#1A1D23]"
+                    } text-2xl font-bold mt-1`}
+                  >
                     {leave.days - leave.used}
                   </Text>
                   <Text className="text-gray-500 text-xs mt-2">
@@ -161,16 +212,32 @@ export default function DashboardScreen() {
 
           {/* Charts */}
           <View className="mb-6">
-            <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} text-lg font-bold mb-4`}>
+            <Text
+              className={`${
+                isDarkMode ? "text-white" : "text-[#1A1D23]"
+              } text-lg font-bold mb-4`}
+            >
               Leave Usage Analytics
             </Text>
 
-            <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-4 shadow-md mb-4`}>
+            {/* Monthly Chart */}
+            <View
+              className={`${
+                isDarkMode ? "bg-gray-800" : "bg-white"
+              } rounded-xl p-4 shadow-md mb-4`}
+            >
               <View className="flex-row justify-between items-center mb-4">
-                <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-semibold`}>
+                <Text
+                  className={`${
+                    isDarkMode ? "text-white" : "text-[#1A1D23]"
+                  } font-semibold`}
+                >
                   Monthly Usage
                 </Text>
-                <TrendingUp color={isDarkMode ? "#10B981" : "#059669"} size={20} />
+                <TrendingUp
+                  color={isDarkMode ? "#10B981" : "#059669"}
+                  size={20}
+                />
               </View>
               <BarChart
                 data={monthlyUsageData}
@@ -178,8 +245,14 @@ export default function DashboardScreen() {
                 height={150}
                 spacing={20}
                 barWidth={20}
-                xAxisLabelTextStyle={{ color: isDarkMode ? "#9CA3AF" : "#6B7280", fontSize: 10 }}
-                yAxisTextStyle={{ color: isDarkMode ? "#9CA3AF" : "#6B7280", fontSize: 10 }}
+                xAxisLabelTextStyle={{
+                  color: isDarkMode ? "#9CA3AF" : "#6B7280",
+                  fontSize: 10,
+                }}
+                yAxisTextStyle={{
+                  color: isDarkMode ? "#9CA3AF" : "#6B7280",
+                  fontSize: 10,
+                }}
                 frontColor={isDarkMode ? "#3B82F6" : "#2563EB"}
                 yAxisThickness={0}
                 xAxisThickness={0}
@@ -190,12 +263,24 @@ export default function DashboardScreen() {
               />
             </View>
 
-            <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-4 shadow-md`}>
+            {/* Yearly Chart */}
+            <View
+              className={`${
+                isDarkMode ? "bg-gray-800" : "bg-white"
+              } rounded-xl p-4 shadow-md`}
+            >
               <View className="flex-row justify-between items-center mb-4">
-                <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-semibold`}>
+                <Text
+                  className={`${
+                    isDarkMode ? "text-white" : "text-[#1A1D23]"
+                  } font-semibold`}
+                >
                   Yearly Distribution
                 </Text>
-                <TrendingDown color={isDarkMode ? "#EF4444" : "#DC2626"} size={20} />
+                <TrendingDown
+                  color={isDarkMode ? "#EF4444" : "#DC2626"}
+                  size={20}
+                />
               </View>
               <LineChart
                 data={yearlyUsageData}
@@ -215,15 +300,25 @@ export default function DashboardScreen() {
                 endOpacity={0.3}
                 gradientDirection="vertical"
                 hideRules
-                xAxisLabelTextStyle={{ color: isDarkMode ? "#9CA3AF" : "#6B7280", fontSize: 10 }}
-                yAxisTextStyle={{ color: isDarkMode ? "#9CA3AF" : "#6B7280", fontSize: 10 }}
+                xAxisLabelTextStyle={{
+                  color: isDarkMode ? "#9CA3AF" : "#6B7280",
+                  fontSize: 10,
+                }}
+                yAxisTextStyle={{
+                  color: isDarkMode ? "#9CA3AF" : "#6B7280",
+                  fontSize: 10,
+                }}
               />
             </View>
           </View>
 
           {/* Quick Actions */}
           <View className="mb-6">
-            <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} text-lg font-bold mb-4`}>
+            <Text
+              className={`${
+                isDarkMode ? "text-white" : "text-[#1A1D23]"
+              } text-lg font-bold mb-4`}
+            >
               Quick Actions
             </Text>
             <View className="flex-row flex-wrap gap-4">
@@ -231,12 +326,22 @@ export default function DashboardScreen() {
                 <TouchableOpacity
                   key={action.id}
                   onPress={() => handleQuickActionPress(action.link)}
-                  className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
+                  className={`${
+                    isDarkMode ? "bg-gray-800" : "bg-white"
+                  } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
                 >
-                  <View className={`${isDarkMode ? 'bg-gray-700' : 'bg-blue-100'} p-3 rounded-full mb-2`}>
+                  <View
+                    className={`${
+                      isDarkMode ? "bg-gray-700" : "bg-blue-100"
+                    } p-3 rounded-full mb-2`}
+                  >
                     {action.icon}
                   </View>
-                  <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-semibold`}>
+                  <Text
+                    className={`${
+                      isDarkMode ? "text-white" : "text-[#1A1D23]"
+                    } font-semibold`}
+                  >
                     {action.title}
                   </Text>
                 </TouchableOpacity>
@@ -245,31 +350,54 @@ export default function DashboardScreen() {
           </View>
 
           {/* Upcoming Leaves */}
-          <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-4 shadow-md mb-6`}>
+          <View
+            className={`${
+              isDarkMode ? "bg-gray-800" : "bg-white"
+            } rounded-xl p-4 shadow-md mb-6`}
+          >
             <View className="flex-row justify-between items-center mb-4">
-              <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} text-lg font-bold`}>
+              <Text
+                className={`${
+                  isDarkMode ? "text-white" : "text-[#1A1D23]"
+                } text-lg font-bold`}
+              >
                 Upcoming Leaves
               </Text>
-              <Calendar color={isDarkMode ? "#9CA3AF" : "#6B7280"} size={20} />
+              <Calendar
+                color={isDarkMode ? "#9CA3AF" : "#6B7280"}
+                size={20}
+              />
             </View>
 
             <View className="flex-row items-center mb-3">
               <View className="bg-blue-500 w-3 h-3 rounded-full mr-3" />
               <View>
-                <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-medium`}>
+                <Text
+                  className={`${
+                    isDarkMode ? "text-white" : "text-[#1A1D23]"
+                  } font-medium`}
+                >
                   Annual Leave
                 </Text>
-                <Text className="text-gray-500 text-sm">15-20 Dec 2023 • 6 days</Text>
+                <Text className="text-gray-500 text-sm">
+                  15–20 Dec 2023 • 6 days
+                </Text>
               </View>
             </View>
 
             <View className="flex-row items-center">
               <View className="bg-green-500 w-3 h-3 rounded-full mr-3" />
               <View>
-                <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-medium`}>
+                <Text
+                  className={`${
+                    isDarkMode ? "text-white" : "text-[#1A1D23]"
+                  } font-medium`}
+                >
                   Sick Leave
                 </Text>
-                <Text className="text-gray-500 text-sm">05 Jan 2024 • 2 days</Text>
+                <Text className="text-gray-500 text-sm">
+                  05 Jan 2024 • 2 days
+                </Text>
               </View>
             </View>
           </View>
@@ -277,11 +405,11 @@ export default function DashboardScreen() {
       </ScrollView>
 
       {/* Floating Button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={() => router.push("/pengajuan")}
-        className="absolute bottom-10 right-6 bg-blue-500 p-4 rounded-full shadow-lg" // ⬅️ bottom-10 bukan bottom-6
+        className="absolute bottom-10 right-6 bg-blue-500 p-4 rounded-full shadow-lg"
       >
-        <Plus color="white" size={24} />
+        <Calendar color="white" size={24} />
       </TouchableOpacity>
     </View>
   );
