@@ -47,7 +47,7 @@ export default function LoginScreen() {
   // Animations
   const eyeAnim = useRef(new Animated.Value(1)).current;
   const alertAnim = useRef(new Animated.Value(0)).current;
-  const screenFade = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   // Eye toggle animation
   const animateEye = () => {
@@ -91,37 +91,45 @@ export default function LoginScreen() {
       useNativeDriver: true,
     }).start();
 
-    setTimeout(() => {
-      Animated.timing(alertAnim, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true,
-      }).start(() => setAlert({ type: null, message: "" }));
-    }, 2500);
+    // Auto hide after 3.5 seconds for errors
+    if (type === "error") {
+      setTimeout(() => {
+        Animated.timing(alertAnim, {
+          toValue: 0,
+          duration: 300,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }).start(() => setAlert({ type: null, message: "" }));
+      }, 3500);
+    }
   };
 
-  // Smooth fade-out before navigation
+  // Smooth fade-out transition with optimized delay
   const handleLogin = () => {
     if (validateForm()) {
       setIsLoading(true);
+      
       setTimeout(() => {
         setIsLoading(false);
         if (email === "user@example.com" && password === "password123") {
           showAlert("success", "Login successful! Redirecting...");
-          Animated.timing(screenFade, {
-            toValue: 0,
-            duration: 400,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }).start(() => {
-            router.replace("../(app)/home");
-            screenFade.setValue(1);
-          });
+          
+          // Optimized delay before fade out
+          setTimeout(() => {
+            // Smooth fade-out animation
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: 500,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }).start(() => {
+              router.replace("../(app)/home");
+            });
+          }, 1200); // Reduced to 1.8 seconds
         } else {
           showAlert("error", "Invalid email or password.");
         }
-      }, 1250);
+      }, 700); // Reduced loading time
     } else {
       showAlert("error", "Please fill in all fields correctly.");
     }
@@ -136,8 +144,13 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Fade-out screen */}
-        <Animated.View style={{ flex: 1, opacity: screenFade }}>
+        {/* Animated fade wrapper */}
+        <Animated.View 
+          style={{ 
+            flex: 1, 
+            opacity: fadeAnim,
+          }}
+        >
           <LinearGradient colors={["#3B82F6", "#60A5FA"]} className="flex-1 px-6 pt-16 pb-10">
             
             {/* Header */}
@@ -256,6 +269,61 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Animated Alert - POSITION ABSOLUTE di atas footer */}
+            {alert.type && (
+              <Animated.View
+                style={{
+                  opacity: alertAnim,
+                  transform: [
+                    {
+                      translateY: alertAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, 0],
+                      }),
+                    },
+                    {
+                      scale: alertAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.9, 1],
+                      }),
+                    },
+                  ],
+                  position: 'absolute',
+                  bottom: 60,
+                  left: 24,
+                  right: 24,
+                  zIndex: 999,
+                }}
+                className={`rounded-2xl py-4 px-5 shadow-lg shadow-black/30 flex-row items-center justify-between ${
+                  alert.type === "success" ? "bg-green-500" : "bg-red-500"
+                }`}
+              >
+                <View className="flex-row items-center space-x-3 flex-1">
+                  {alert.type === "success" ? (
+                    <CheckCircle className="text-white" size={22} />
+                  ) : (
+                    <XCircle className="text-white" size={22} />
+                  )}
+                  <Text className="flex-1 text-white text-base font-semibold">
+                    {alert.message}
+                  </Text>
+                </View>
+
+                <TouchableOpacity 
+                  onPress={() => {
+                    Animated.timing(alertAnim, {
+                      toValue: 0,
+                      duration: 300,
+                      easing: Easing.in(Easing.quad),
+                      useNativeDriver: true,
+                    }).start(() => setAlert({ type: null, message: "" }));
+                  }}
+                >
+                  <Text className="text-white text-xl font-bold ml-2">×</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
+
             {/* Footer */}
             <View className="mt-8 items-center">
               <Text className="text-blue-100 text-center text-sm">
@@ -263,61 +331,6 @@ export default function LoginScreen() {
               </Text>
             </View>
           </LinearGradient>
-
-          {/* Animated Alert - POSITION ABSOLUTE */}
-          {alert.type && (
-            <Animated.View
-              style={{
-                opacity: alertAnim,
-                transform: [
-                  {
-                    translateY: alertAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [40, 0],
-                    }),
-                  },
-                  {
-                    scale: alertAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.85, 1],
-                    }),
-                  },
-                ],
-                position: 'absolute',
-                bottom: 100, // Adjust this value as needed
-                left: 24,
-                right: 24,
-                zIndex: 999,
-              }}
-              className={`rounded-2xl py-4 px-5 shadow-lg shadow-black/30 flex-row items-center justify-between ${
-                alert.type === "success" ? "bg-green-500" : "bg-red-500"
-              }`}
-            >
-              <View className="flex-row items-center space-x-3 flex-1">
-                {alert.type === "success" ? (
-                  <CheckCircle className="text-white" size={22} />
-                ) : (
-                  <XCircle className="text-white" size={22} />
-                )}
-                <Text className="flex-1 text-white text-base font-semibold">
-                  {alert.message}
-                </Text>
-              </View>
-
-              <TouchableOpacity 
-                onPress={() => {
-                  Animated.timing(alertAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    easing: Easing.in(Easing.quad),
-                    useNativeDriver: true,
-                  }).start(() => setAlert({ type: null, message: "" }));
-                }}
-              >
-                <Text className="text-white text-xl font-bold ml-2">×</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>

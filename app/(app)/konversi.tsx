@@ -8,17 +8,18 @@ import {
   Calculator,
   CheckCircle,
 } from "lucide-react-native";
-
-// DIPERBAIKI: Gunakan 'expo-linear-gradient' agar kompatibel dengan Expo Router/Expo Go
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
-// DIPERBAIKI: Arahkan cssInterop ke komponen yang benar dari Expo
+// Arahkan cssInterop ke komponen yang benar dari Expo
 cssInterop(LinearGradient, { className: "style" });
 
 export default function LeaveConversionScreen() {
   const router = useRouter();
-  const [isDarkMode] = useState(false); // Akan dihubungkan ke global theme nanti
+  const insets = useSafeAreaInsets();
+  const [isDarkMode] = useState(false);
   const [conversionRequested, setConversionRequested] = useState(false);
 
   // Data saldo cuti (mock)
@@ -51,7 +52,6 @@ export default function LeaveConversionScreen() {
   const handleRequestConversion = () => {
     Alert.alert(
       "Leave Conversion Request",
-      // DIPERBAIKI: Menggunakan backticks (`) untuk template literal
       `You are requesting to convert ${totalEligibleDays} days for a net amount of $${netAmount.toFixed(
         2
       )}. This action cannot be undone.`,
@@ -74,22 +74,28 @@ export default function LeaveConversionScreen() {
 
   return (
     <View
-      // DIPERBAIKI: Menggunakan backticks (`) untuk template literal
       className={`${
         isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"
       } flex-1`}
+      style={{
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
     >
+      <StatusBar style="light" />
+
       {/* Header */}
       <LinearGradient
         colors={
           isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]
         }
-        className="p-6 rounded-b-3xl"
-        // Tambahkan start dan end point untuk konsistensi di semua platform
+        className="px-6 pb-6 rounded-b-3xl"
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        style={{ paddingTop: insets.top + 24 }}
       >
-        <View className="flex-row items-center mt-10">
+        <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <ChevronLeft color="white" size={24} />
           </TouchableOpacity>
@@ -108,7 +114,6 @@ export default function LeaveConversionScreen() {
       <ScrollView
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 34 }} // Menambah padding di bawah
       >
         {/* Eligible Days */}
         <View

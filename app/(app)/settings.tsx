@@ -25,11 +25,17 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
+// 👈 1. IMPORT Insets dan Status Bar (Konsistensi Layout)
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 cssInterop(LinearGradient, { className: "style" });
+// 👈 2. TAMBAHKAN INI: Perbaikan untuk animasi Switch
+cssInterop(Switch, { className: false });
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets(); // 👈 3. DAPATKAN nilai insets
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
@@ -80,15 +86,29 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}>
+    // 👈 4. GANTI View statis dengan View dinamis + insets
+    <View 
+      className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
+      style={{
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+    >
+      {/* 👈 5. TAMBAHKAN Status Bar */}
+      <StatusBar style="light" />
+
       {/* Header */}
       <LinearGradient
         colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
-        className="p-6 rounded-b-3xl"
+        // 👈 6. UBAH `p-6` menjadi `px-6 pb-6` dan TAMBAHKAN style
+        className="px-6 pb-6 rounded-b-3xl"
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        style={{ paddingTop: insets.top + 24 }}
       >
-        <View className="flex-row items-center mt-10">
+        {/* 👈 7. HAPUS `mt-10` */}
+        <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <ChevronLeft color="white" size={24} />
           </TouchableOpacity>
@@ -105,9 +125,11 @@ export default function SettingsScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 34 }} // Fix untuk navbar bawaan
+        // 👈 8. HAPUS `contentContainerStyle` statis
       >
         <View className="px-4 mt-6">
+          {/* ... (sisa kode card Anda tetap sama, tidak perlu diubah) ... */}
+          
           {/* Account */}
           <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-5 shadow-md mb-6`}>
             <View className="flex-row items-center mb-4">
@@ -116,7 +138,7 @@ export default function SettingsScreen() {
                 Account
               </Text>
             </View>
-
+            {/* ... data user ... */}
             <View className="mb-4">
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
                 Name
@@ -125,7 +147,6 @@ export default function SettingsScreen() {
                 {userData.name}
               </Text>
             </View>
-
             <View className="mb-4">
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
                 Email
@@ -137,7 +158,6 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             </View>
-
             <View className="mb-4">
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
                 Phone
@@ -149,7 +169,6 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             </View>
-
             <View className="mb-4">
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
                 Department
@@ -158,7 +177,6 @@ export default function SettingsScreen() {
                 {userData.department}
               </Text>
             </View>
-
             <View>
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
                 Employee ID
@@ -226,6 +244,7 @@ export default function SettingsScreen() {
             ))}
           </View>
 
+          {/* ... (sisa card lainnya: Leave Policy, Security, Logout) ... */}
           {/* Leave Policy */}
           <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-5 shadow-md mb-6`}>
             <View className="flex-row items-center mb-4">
@@ -234,7 +253,6 @@ export default function SettingsScreen() {
                 Leave Policy
               </Text>
             </View>
-
             {leavePolicy.map((policy, index) => (
               <View
                 key={index}
@@ -304,6 +322,7 @@ export default function SettingsScreen() {
               Logout
             </Text>
           </TouchableOpacity>
+
         </View>
       </ScrollView>
     </View>

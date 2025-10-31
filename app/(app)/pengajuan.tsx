@@ -9,16 +9,20 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { LinearGradient } from "expo-linear-gradient";
+import { cssInterop } from "nativewind";
 import {
   ChevronLeft,
   ChevronRight,
   Calendar,
   Upload,
   CheckCircle,
-  ArrowLeft,
 } from "lucide-react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+cssInterop(LinearGradient, { className: "style" });
 
 type LeaveType = {
   id: string;
@@ -35,6 +39,7 @@ const leaveTypes: LeaveType[] = [
 
 export default function LeaveApplicationForm() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isDarkMode] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState({
@@ -52,7 +57,6 @@ export default function LeaveApplicationForm() {
 
   const totalSteps = 3;
 
-  // FIX: Gunakan useCallback untuk calculateDays
   const calculateDays = useCallback(() => {
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
@@ -67,7 +71,6 @@ export default function LeaveApplicationForm() {
     }
   }, [formData.startDate, formData.endDate]);
 
-  // Fix: Hitung hari otomatis ketika startDate atau endDate berubah
   useEffect(() => {
     calculateDays();
   }, [calculateDays]);
@@ -118,7 +121,6 @@ export default function LeaveApplicationForm() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  // FIX: Improved date picker logic
   const showDatePickerModal = (type: 'start' | 'end') => {
     const currentDate = type === 'start' ? formData.startDate : formData.endDate;
     setTempDate(currentDate ? new Date(currentDate) : new Date());
@@ -126,7 +128,6 @@ export default function LeaveApplicationForm() {
     setShowDatePicker(type);
   };
 
-  // FIX: Proper date selection handling
   const onDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(null);
@@ -134,8 +135,6 @@ export default function LeaveApplicationForm() {
     
     if (event.type === 'set' && selectedDate) {
       const dateString = selectedDate.toISOString().split('T')[0];
-      
-      // FIX: Only update the field that was originally clicked
       handleInputChange(datePickerField === 'start' ? 'startDate' : 'endDate', dateString);
     } else if (event.type === 'dismissed') {
       setShowDatePicker(null);
@@ -367,28 +366,36 @@ export default function LeaveApplicationForm() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`} edges={['top']}>
-      {/* Header dengan Tombol Back */}
-      <View className={`p-4 pt-2 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity 
-            onPress={() => router.back()}
-            className="flex-row items-center"
-          >
-            <ArrowLeft size={24} color="#3B82F6" />
-            <Text className="ml-2 text-blue-600 font-medium">Back</Text>
+    <View 
+      className={`flex-1 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`} 
+      style={{ 
+        paddingBottom: insets.bottom, 
+        paddingLeft: insets.left, 
+        paddingRight: insets.right 
+      }}
+    >
+      <StatusBar style="light" />
+
+      {/* Header */}
+      <LinearGradient
+        colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
+        className="px-6 pb-6 rounded-b-3xl"
+        style={{ paddingTop: insets.top + 24 }}
+      >
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.back()} className="mr-4 p-1">
+            <ChevronLeft color="white" size={24} />
           </TouchableOpacity>
-          <View className="flex-1 items-center">
-            <Text className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+          <View>
+            <Text className="text-white text-xl font-bold">
               Leave Application
             </Text>
-            <Text className={`text-center mt-1 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+            <Text className="text-blue-100 text-sm mt-1">
               Step {currentStep} of {totalSteps}
             </Text>
           </View>
-          <View className="w-20" />
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Progress Bar */}
       <View className={`h-1 ${isDarkMode ? "bg-gray-700" : "bg-gray-200"}`}>
@@ -451,6 +458,6 @@ export default function LeaveApplicationForm() {
           <ChevronRight size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -21,9 +21,9 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context"; // 👈 1. IMPORT Insets
-import { StatusBar } from "expo-status-bar"; // 👈 2. IMPORT Status Bar
+import { useRouter, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 // ✅ Pastikan LinearGradient bisa pakai className
 cssInterop(LinearGradient, { className: "style" });
@@ -41,16 +41,24 @@ type QuickAction = {
 };
 
 export default function DashboardScreen() {
-  const insets = useSafeAreaInsets(); // 👈 3. DAPATKAN nilai insets (padding aman)
+  const insets = useSafeAreaInsets();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [switchReady, setSwitchReady] = useState(false);
   const router = useRouter();
 
-  // ✅ Delay kecil supaya layout siap sebelum Switch dirender
-  useEffect(() => {
-    const t = setTimeout(() => setSwitchReady(true), 50);
-    return () => clearTimeout(t);
-  }, []);
+  // ✅ Ini akan berjalan SETIAP KALI layar kembali fokus
+  useFocusEffect(
+    useCallback(() => {
+      // Jalan saat layar FOKUS
+      const t = setTimeout(() => setSwitchReady(true), 50);
+
+      // Jalan saat layar DITINGGALKAN (cleanup)
+      return () => {
+        setSwitchReady(false); // Unmount Switch & Ikon saat pindah halaman
+        clearTimeout(t);
+      };
+    }, []) // Dependency array tetap kosong
+  );
 
   const leaveBalances = [
     { type: "Annual", days: 15, used: 7, color: "#3B82F6" },
@@ -106,24 +114,20 @@ export default function DashboardScreen() {
   return (
     <View
       className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
-      // 👈 4. BERI PADDING BAWAH agar aman dari navigasi sistem
       style={{
         paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right,
       }}
     >
-      {/* 👈 5. SET status bar text menjadi "light" (putih) */}
       <StatusBar style="light" />
 
       {/* Header */}
       <LinearGradient
         colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
-        // 👈 6. UBAH className (dari p-6) & TAMBAHKAN style
         className="px-6 pb-6 rounded-b-3xl"
-        style={{ paddingTop: insets.top + 24 }} // Padding atas = area status bar + 24px
+        style={{ paddingTop: insets.top + 24 }}
       >
-        {/* 👈 7. HAPUS `mt-10` */}
         <View className="flex-row justify-between items-center">
           <View>
             <Text className="text-white text-2xl font-bold">LeaveManager</Text>
@@ -133,22 +137,27 @@ export default function DashboardScreen() {
           </View>
 
           <View className="flex-row items-center">
-            {isDarkMode ? (
-              <Moon color="white" size={20} />
-            ) : (
-              <Sun color="white" size={20} />
-            )}
-
-            {/* ✅ Animasi Switch akan selalu mulus, tidak freeze di awal */}
+            
+            {/* 👈 PERBAIKAN DI SINI: Bungkus Ikon dan Switch dalam satu kondisional */}
             {switchReady && (
-              <Switch
-                value={isDarkMode}
-                onValueChange={toggleTheme}
-                trackColor={{ true: "#6B7280", false: "#D1D5DB" }}
-                thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
-                className="ml-2"
-              />
+              <>
+                {isDarkMode ? (
+                  <Moon color="white" size={20} />
+                ) : (
+                  <Sun color="white" size={20} />
+                )}
+              
+                <View className="ml-2">
+                  <Switch
+                    value={isDarkMode}
+                    onValueChange={toggleTheme}
+                    trackColor={{ true: "#6B7280", false: "#D1D5DB" }}
+                    thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
+                  />
+                </View>
+              </>
             )}
+            
           </View>
         </View>
       </LinearGradient>
@@ -159,6 +168,8 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 80 }}
       >
+        {/* ... (sisa konten ScrollView Anda tetap sama) ... */}
+        
         <View className="px-4 mt-6">
           {/* Leave Balances */}
           <View className="mb-6">

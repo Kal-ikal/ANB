@@ -7,7 +7,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail } from "lucide-react-native";
@@ -36,20 +35,10 @@ export default function ForgotPasswordScreen() {
 
     setIsLoading(true);
 
-    // Simulate API call
+    // Simulasi API
     setTimeout(() => {
       setIsLoading(false);
       setIsSuccess(true);
-      Alert.alert(
-        "Reset Instructions Sent",
-        "Please check your email for password reset instructions. If you don't see the email, check your spam folder.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.push("../(auth)/login"),
-          },
-        ]
-      );
     }, 1500);
   };
 
@@ -69,36 +58,38 @@ export default function ForgotPasswordScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-1 justify-center max-w-md mx-auto w-full">
-          {/* Header */}
+          {/* 🧩 Header */}
           <View className="mb-12">
             <Text className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-2">
               Reset Password
             </Text>
             <Text className="text-gray-600 dark:text-gray-300 text-center">
-              Enter your email and we&apos;ll send you instructions to reset your
-              password
+              Enter your email and we&apos;ll send you instructions to reset your password
             </Text>
           </View>
 
-          {/* Form */}
+          {/* 🧩 Form atau pesan sukses */}
           {!isSuccess ? (
             <View className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
               <View className="mb-6">
                 <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">
                   Email Address
                 </Text>
-                <View className="relative">
-                  <Mail
-                    size={20}
-                    color="#94a3b8"
-                    className="absolute left-3 top-3.5 z-10" // Menambah z-10 untuk_s_jaga
-                  />
+
+                {/* 🧩 Wrapper Input */}
+                <View
+                  className="flex-row items-center border rounded-lg px-3"
+                  style={{
+                    borderColor: error ? "#ef4444" : "#d1d5db", // merah saat error
+                    backgroundColor: "#1f2937", // dark:bg-gray-800
+                  }}
+                >
+                  {/* 🧩 Ikon Mail, tidak absolute lagi */}
+                  <Mail size={20} color="#94a3b8" style={{ marginRight: 8 }} />
+
+                  {/* 🧩 Input email */}
                   <TextInput
-                    className={`flex-1 pl-10 pr-4 py-3 rounded-lg border ${
-                      error
-                        ? "border-red-500"
-                        : "border-gray-300 dark:border-gray-600"
-                    } bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white`}
+                    className="flex-1 py-3 text-base text-gray-900 dark:text-white"
                     placeholder="Enter your email"
                     placeholderTextColor="#94a3b8"
                     value={email}
@@ -108,11 +99,13 @@ export default function ForgotPasswordScreen() {
                     autoCorrect={false}
                   />
                 </View>
+
                 {error ? (
                   <Text className="text-red-500 text-sm mt-1">{error}</Text>
                 ) : null}
               </View>
 
+              {/* 🧩 Tombol kirim */}
               <TouchableOpacity
                 className={`py-3.5 rounded-xl items-center justify-center mb-4 ${
                   isLoading
@@ -139,30 +132,27 @@ export default function ForgotPasswordScreen() {
               </View>
             </View>
           ) : (
-            <View className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 items-center">
-              <View className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full items-center justify-center mb-6">
-                <Text className="text-green-600 dark:text-green-400 text-2xl">
-                  ✓
-                </Text>
+            // 🧩 Tampilan sukses
+            <View className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 items-center space-y-4">
+              <View className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                <Text className="text-green-600 dark:text-green-400 text-3xl">✓</Text>
               </View>
-              <Text className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+              <Text className="text-2xl font-bold text-gray-900 dark:text-white text-center">
                 Check Your Email
               </Text>
-              <Text className="text-gray-600 dark:text-gray-300 text-center mb-6">
-                We&apos;ve sent password reset instructions to {email}
+              <Text className="text-gray-600 dark:text-gray-300 text-center">
+                We&apos;ve sent password reset instructions to {email}. Please check your inbox or spam folder.
               </Text>
               <TouchableOpacity
-                className="w-full py-3.5 rounded-xl items-center justify-center bg-blue-600 dark:bg-blue-500 mb-4"
+                className="w-full py-3.5 rounded-xl items-center justify-center bg-blue-600 dark:bg-blue-500 mt-2"
                 onPress={handleBackToLogin}
               >
-                <Text className="text-white font-semibold text-base">
-                  Back to Login
-                </Text>
+                <Text className="text-white font-semibold text-base">Back to Login</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* Footer */}
+          {/* 🧩 Footer */}
           <View className="mt-8">
             <Text className="text-gray-500 dark:text-gray-400 text-center text-sm">
               Didn&apos;t receive the email? Check your spam folder or{"\n"}

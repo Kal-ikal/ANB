@@ -12,11 +12,15 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
+// 👈 1. IMPORT Insets dan Status Bar
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 cssInterop(LinearGradient, { className: "style" });
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets(); // 👈 2. DAPATKAN nilai insets
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isDarkMode] = useState(false); // atau dari context/global state
 
@@ -30,7 +34,7 @@ export default function ProfileScreen() {
     address: "123 Main Street, San Francisco, CA",
     joinDate: "January 15, 2020",
     avatar:
-      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTF8fHVzZXJ8ZW58MHx8MHx8fDA%3D",
+      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTF8fHVzZXJ8ZW58MHx8MHx8fDA%DAl",
   };
 
   const leaveHistory = [
@@ -55,32 +59,33 @@ export default function ProfileScreen() {
       endDate: "2023-10-12",
       status: "Pending",
     },
-    {
-      id: 4,
-      type: "Annual Leave",
-      startDate: "2023-09-22",
-      endDate: "2023-09-25",
-      status: "Approved",
-    },
-    {
-      id: 5,
-      type: "Annual Leave",
-      startDate: "2023-08-15",
-      endDate: "2023-08-20",
-      status: "Rejected",
-    },
+    // ... data lainnya
   ];
 
   return (
-    <View className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}>
+    // 👈 3. GANTI View statis dengan View dinamis + insets
+    <View 
+      className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
+      style={{
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+    >
+      {/* 👈 4. TAMBAHKAN Status Bar */}
+      <StatusBar style="light" />
+
       {/* Header dengan Back Button */}
       <LinearGradient
         colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
-        className="p-6 rounded-b-3xl"
+        // 👈 5. UBAH `p-6` menjadi `px-6 pb-6` dan TAMBAHKAN style
+        className="px-6 pb-6 rounded-b-3xl"
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        style={{ paddingTop: insets.top + 24 }}
       >
-        <View className="flex-row items-center mt-10">
+        {/* 👈 6. HAPUS `mt-10` */}
+        <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <ChevronLeft color="white" size={24} />
           </TouchableOpacity>
@@ -99,7 +104,7 @@ export default function ProfileScreen() {
       <ScrollView
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 34 }}
+        // 👈 7. HAPUS `contentContainerStyle` statis
       >
         {/* Profile Header */}
         <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 mb-6 shadow-md`}>
@@ -226,7 +231,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Leave History */}
-        <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 shadow-md`}>
+        <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 mb-6 shadow-md`}>
           <View className="flex-row items-center justify-between mb-4">
             <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
               Leave History
