@@ -43,7 +43,7 @@ export default function ForgotPasswordScreen() {
   };
 
   const handleBackToLogin = () => {
-    router.push("../(auth)/login");
+    router.push("/login");
   };
 
   return (

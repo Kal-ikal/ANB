@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, RefreshControl, StyleSheet, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Calendar, BarChart2, Users, Shield, Plus } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 interface Feature {
   icon: React.JSX.Element;
@@ -78,7 +79,11 @@ const LandingScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <StatusBar 
+        style="dark"
+        backgroundColor="#EFF6FF"
+      />
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -100,19 +105,15 @@ const LandingScreen: React.FC = () => {
           </View>
         </View>
 
-      
-
-
         {/* Hero Section */}
-          <View style={styles.heroSection}>
-            <Text style={styles.heroTitle}>
-              Simplify Your Leave Management
-            </Text>
-            <Text style={styles.heroDescription}>
-              Track, request, and manage your leave entitlements with ease. All in one place.
-            </Text>
+        <View style={styles.heroSection}>
+          <Text style={styles.heroTitle}>
+            Simplify Your Leave Management
+          </Text>
+          <Text style={styles.heroDescription}>
+            Track, request, and manage your leave entitlements with ease. All in one place.
+          </Text>
 
-          {/* Container khusus untuk image dan button dengan border seperti feature card */}
           <View style={styles.heroContentContainer}>
             <View style={styles.imageContainer}>
               <Image
@@ -241,7 +242,6 @@ const LandingScreen: React.FC = () => {
           </View>
         </View>
         
-
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 16,
+    paddingTop: Platform.OS === 'android' ? 16 : 8,
     paddingBottom: 24,
     paddingHorizontal: 24,
     backgroundColor: '#EFF6FF',
@@ -276,18 +276,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#2563EB',
-  },
-  loginButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  loginButtonText: {
-    color: '#2563EB',
-    fontWeight: '600',
   },
   heroSection: {
     paddingHorizontal: 24,
@@ -346,31 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
- 
-  secondaryButton: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#1F2937',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  freeTrial: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  freeTrialText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginLeft: 8,
-  },
   featuresSection: {
     paddingHorizontal: 24,
     paddingBottom: 48,
@@ -387,14 +350,14 @@ const styles = StyleSheet.create({
   carouselContainer: {
     borderRadius: 12,
     padding: 16,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    backgroundColor: 'white',
     marginBottom: 24,
   },
   carouselContent: {
@@ -507,8 +470,8 @@ const styles = StyleSheet.create({
   faqItem: {
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
     backgroundColor: '#F9FAFB',
+    borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   faqContent: {
@@ -543,27 +506,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
   },
-  footerSubtext: {
-    color: '#9CA3AF',
-    textAlign: 'center',
-    fontSize: 12,
-    marginTop: 8,
-  },
- heroContainer: {
-    padding: 20,
-    borderRadius: 24,
-    marginHorizontal: 20,
-    marginBottom: 50,
-    backgroundColor: '#F3F4F6', // abu-abu terang
-    borderWidth: 2,
-    borderColor: '#9CA3AF', // abu-abu sedang agar tegas
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-    },
-
 });
 
 export default LandingScreen;

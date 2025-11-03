@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  Appearance,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,16 +21,22 @@ import {
   Upload,
   CheckCircle,
 } from "lucide-react-native";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import * as DocumentPicker from "expo-document-picker";
+import * as NavigationBar from "expo-navigation-bar";
 
 cssInterop(LinearGradient, { className: "style" });
 
-type LeaveType = {
-  id: string;
-  name: string;
+type FormData = {
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  days: number;
+  documents: string[];
 };
 
-const leaveTypes: LeaveType[] = [
+const leaveTypes = [
   { id: "annual", name: "Annual Leave" },
   { id: "sick", name: "Sick Leave" },
   { id: "personal", name: "Personal Leave" },
@@ -40,34 +47,51 @@ const leaveTypes: LeaveType[] = [
 export default function LeaveApplicationForm() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isDarkMode] = useState(false);
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [formData, setFormData] = useState({
+
+  // === THEME MODE (sementara, nanti bisa diganti ke ThemeContext) ===
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const colorScheme = Appearance.getColorScheme?.();
+    if (colorScheme === "dark") setIsDarkMode(true);
+  }, []);
+
+  // === Set warna navbar bawah Android ===
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      const bgColor = isDarkMode ? "#000000" : "#FFFFFF";
+      const buttonStyle = isDarkMode ? "light" : "dark";
+      NavigationBar.setBackgroundColorAsync(bgColor);
+      NavigationBar.setButtonStyleAsync(buttonStyle);
+    }
+  }, [isDarkMode]);
+
+  // === FORM STATE ===
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<FormData>({
     leaveType: "",
     startDate: "",
     endDate: "",
     reason: "",
     days: 0,
-    documents: [] as string[],
+    documents: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [datePickerField, setDatePickerField] = useState<"start" | "end">("start");
   const [tempDate, setTempDate] = useState(new Date());
-  const [datePickerField, setDatePickerField] = useState<'start' | 'end'>('start');
-
   const totalSteps = 3;
 
+  // === HITUNG JUMLAH HARI CUTI (n-1) ===
   const calculateDays = useCallback(() => {
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
-      
       const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      
-      setFormData(prev => ({ ...prev, days: diffDays }));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // n-1
+      setFormData((prev) => ({ ...prev, days: diffDays }));
     } else {
-      setFormData(prev => ({ ...prev, days: 0 }));
+      setFormData((prev) => ({ ...prev, days: 0 }));
     }
   }, [formData.startDate, formData.endDate]);
 
@@ -75,45 +99,42 @@ export default function LeaveApplicationForm() {
     calculateDays();
   }, [calculateDays]);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // === HANDLERS ===
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value } as FormData));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
   const validateStep = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (currentStep === 1) {
-      if (!formData.leaveType)
-        newErrors.leaveType = "Please select a leave type";
-    } else if (currentStep === 2) {
+    if (currentStep === 1 && !formData.leaveType)
+      newErrors.leaveType = "Please select a leave type";
+    if (currentStep === 2) {
       if (!formData.startDate) newErrors.startDate = "Start date is required";
       if (!formData.endDate) newErrors.endDate = "End date is required";
       if (formData.startDate && formData.endDate) {
-        const start = new Date(formData.startDate);
-        const end = new Date(formData.endDate);
-        if (start > end)
-          newErrors.endDate = "End date must be after start date";
+        const s = new Date(formData.startDate);
+        const e = new Date(formData.endDate);
+        if (s > e) newErrors.endDate = "End date must be after start date";
       }
-    } else if (currentStep === 3) {
-      if (!formData.reason) newErrors.reason = "Reason is required";
     }
+    if (currentStep === 3 && !formData.reason)
+      newErrors.reason = "Reason is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
     if (validateStep()) {
-      if (currentStep < totalSteps) {
-        setCurrentStep(currentStep + 1);
-      } else {
+      if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
+      else
         Alert.alert(
           "Leave Application Submitted",
-          "Your leave application has been successfully submitted for review.",
+          "Your leave application has been submitted.",
           [{ text: "OK", onPress: () => router.push("/(app)/home") }]
         );
-      }
     }
   };
 
@@ -121,168 +142,161 @@ export default function LeaveApplicationForm() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const showDatePickerModal = (type: 'start' | 'end') => {
-    const currentDate = type === 'start' ? formData.startDate : formData.endDate;
-    setTempDate(currentDate ? new Date(currentDate) : new Date());
-    setDatePickerField(type);
-    setShowDatePicker(type);
+  const showPicker = (field: "start" | "end") => {
+    setDatePickerField(field);
+    const fd: "startDate" | "endDate" = field === "start" ? "startDate" : "endDate";
+    setTempDate(formData[fd] ? new Date(formData[fd]) : new Date());
+    setShowDatePicker(true);
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(null);
+    if (Platform.OS === "android") setShowDatePicker(false);
+    if (event.type === "set" && selectedDate) {
+      const dateString = selectedDate.toISOString().split("T")[0];
+      const fieldName: keyof FormData =
+        datePickerField === "start" ? "startDate" : "endDate";
+      handleInputChange(fieldName, dateString);
     }
-    
-    if (event.type === 'set' && selectedDate) {
-      const dateString = selectedDate.toISOString().split('T')[0];
-      handleInputChange(datePickerField === 'start' ? 'startDate' : 'endDate', dateString);
-    } else if (event.type === 'dismissed') {
-      setShowDatePicker(null);
+  };
+
+  const handleDocumentUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf"],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+      if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const name = asset.name ?? "document.pdf";
+        const max = 2 * 1024 * 1024;
+        if (asset.size && asset.size > max) {
+          Alert.alert("File too large", "File must be under 2MB");
+          return;
+        }
+        setFormData((p) => ({ ...p, documents: [...p.documents, name] }));
+      }
+    } catch (err) {
+      console.error("Error picking document:", err);
+      Alert.alert("Error", "Could not pick document.");
     }
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    if (!dateString) return "";
+    const d = new Date(dateString);
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
-  const handleDocumentUpload = () => {
-    const mockDocument = `document_${formData.documents.length + 1}.pdf`;
-    setFormData(prev => ({
-      ...prev,
-      documents: [...prev.documents, mockDocument],
-    }));
-  };
-
+  // === STEP RENDERERS ===
   const renderStepOne = () => (
     <View className="space-y-6">
-      <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+      <Text className="text-lg font-bold text-gray-800 dark:text-white">
         Select Leave Type
       </Text>
-      <View className="space-y-3">
-        {leaveTypes.map((type) => (
-          <TouchableOpacity
-            key={type.id}
-            className={`p-4 rounded-xl border ${
+      {leaveTypes.map((type) => (
+        <TouchableOpacity
+          key={type.id}
+          className={`p-4 rounded-xl border ${
+            formData.leaveType === type.id
+              ? "bg-blue-50 border-blue-500"
+              : "bg-white border-gray-200"
+          }`}
+          onPress={() => handleInputChange("leaveType", type.id)}
+        >
+          <Text
+            className={`text-base ${
               formData.leaveType === type.id
-                ? isDarkMode 
-                  ? "bg-blue-900 border-blue-500" 
-                  : "bg-blue-50 border-blue-500"
-                : isDarkMode 
-                  ? "bg-gray-800 border-gray-700" 
-                  : "bg-white border-gray-200"
+                ? "text-blue-600 font-semibold"
+                : "text-gray-700"
             }`}
-            onPress={() => handleInputChange("leaveType", type.id)}
           >
-            <Text
-              className={`text-base ${
-                formData.leaveType === type.id
-                  ? isDarkMode 
-                    ? "text-blue-300 font-semibold" 
-                    : "text-blue-600 font-semibold"
-                  : isDarkMode 
-                    ? "text-gray-300" 
-                    : "text-gray-700"
-              }`}
-            >
-              {type.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        {errors.leaveType && (
-          <Text className="text-red-500 text-sm">{errors.leaveType}</Text>
-        )}
-      </View>
+            {type.name}
+          </Text>
+        </TouchableOpacity>
+      ))}
+      {errors.leaveType ? (
+        <Text className="text-red-500 text-sm">{errors.leaveType}</Text>
+      ) : null}
     </View>
   );
 
   const renderStepTwo = () => (
     <View className="space-y-6">
-      <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+      <Text className="text-lg font-bold text-gray-800 dark:text-white">
         Select Date Range
       </Text>
-      <View className="space-y-4">
-        <View>
-          <Text className={`text-base mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
-            Start Date
-          </Text>
-          <TouchableOpacity
-            className={`flex-row items-center border rounded-xl p-3 ${
-              isDarkMode 
-                ? "bg-gray-800 border-gray-600" 
-                : "bg-white border-gray-300"
-            }`}
-            onPress={() => showDatePickerModal('start')}
-          >
-            <Calendar size={20} color="#3B82F6" />
-            <Text className={`flex-1 ml-3 ${
-              formData.startDate 
-                ? isDarkMode ? "text-white" : "text-gray-700" 
-                : isDarkMode ? "text-gray-400" : "text-gray-400"
-            }`}>
-              {formData.startDate ? formatDate(formData.startDate) : 'Select start date'}
-            </Text>
-          </TouchableOpacity>
-          {errors.startDate && (
-            <Text className="text-red-500 text-sm mt-1">{errors.startDate}</Text>
-          )}
-        </View>
 
-        <View>
-          <Text className={`text-base mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
-            End Date
+      {/* START DATE */}
+      <View>
+        <Text className="mb-2 text-gray-700 dark:text-gray-300">Start Date</Text>
+        <TextInput
+          className="border rounded-xl p-3 mb-2 bg-white border-gray-300 text-gray-700"
+          placeholder="YYYY-MM-DD"
+          value={formData.startDate}
+          onChangeText={(text) => handleInputChange("startDate", text)}
+        />
+        <TouchableOpacity
+          onPress={() => showPicker("start")}
+          className="flex-row items-center border rounded-xl p-3 bg-white border-gray-300"
+        >
+          <Calendar size={20} color="#3B82F6" />
+          <Text className="ml-3 text-gray-700">
+            {formData.startDate
+              ? formatDate(formData.startDate)
+              : "Select start date"}
           </Text>
-          <TouchableOpacity
-            className={`flex-row items-center border rounded-xl p-3 ${
-              isDarkMode 
-                ? "bg-gray-800 border-gray-600" 
-                : "bg-white border-gray-300"
-            }`}
-            onPress={() => showDatePickerModal('end')}
-          >
-            <Calendar size={20} color="#3B82F6" />
-            <Text className={`flex-1 ml-3 ${
-              formData.endDate 
-                ? isDarkMode ? "text-white" : "text-gray-700" 
-                : isDarkMode ? "text-gray-400" : "text-gray-400"
-            }`}>
-              {formData.endDate ? formatDate(formData.endDate) : 'Select end date'}
-            </Text>
-          </TouchableOpacity>
-          {errors.endDate && (
-            <Text className="text-red-500 text-sm mt-1">{errors.endDate}</Text>
-          )}
-        </View>
-
-        <View className={`rounded-xl p-4 ${
-          isDarkMode ? "bg-blue-900" : "bg-blue-50"
-        }`}>
-          <Text className={`text-base font-semibold ${
-            isDarkMode ? "text-blue-200" : "text-blue-800"
-          }`}>
-            Total Leave Days: {formData.days}
-          </Text>
-          <Text className={`text-sm mt-1 ${
-            isDarkMode ? "text-blue-400" : "text-blue-600"
-          }`}>
-            Automatically calculated based on selected dates
-          </Text>
-        </View>
+        </TouchableOpacity>
+        {errors.startDate ? (
+          <Text className="text-red-500 text-sm mt-1">{errors.startDate}</Text>
+        ) : null}
       </View>
 
-      {/* Date Picker */}
+      {/* END DATE */}
+      <View>
+        <Text className="mb-2 text-gray-700 dark:text-gray-300">End Date</Text>
+        <TextInput
+          className="border rounded-xl p-3 mb-2 bg-white border-gray-300 text-gray-700"
+          placeholder="YYYY-MM-DD"
+          value={formData.endDate}
+          onChangeText={(text) => handleInputChange("endDate", text)}
+        />
+        <TouchableOpacity
+          onPress={() => showPicker("end")}
+          className="flex-row items-center border rounded-xl p-3 bg-white border-gray-300"
+        >
+          <Calendar size={20} color="#3B82F6" />
+          <Text className="ml-3 text-gray-700">
+            {formData.endDate ? formatDate(formData.endDate) : "Select end date"}
+          </Text>
+        </TouchableOpacity>
+        {errors.endDate ? (
+          <Text className="text-red-500 text-sm mt-1">{errors.endDate}</Text>
+        ) : null}
+      </View>
+
+      <View className="rounded-xl p-4 bg-blue-50">
+        <Text className="text-base font-semibold text-blue-800">
+          Total Leave Days: {formData.days}
+        </Text>
+      </View>
+
       {showDatePicker && (
         <DateTimePicker
           value={tempDate}
           mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           onChange={onDateChange}
-          minimumDate={datePickerField === 'end' && formData.startDate ? new Date(formData.startDate) : new Date()}
+          minimumDate={
+            datePickerField === "end" && formData.startDate
+              ? new Date(formData.startDate)
+              : undefined
+          }
         />
       )}
     </View>
@@ -290,71 +304,58 @@ export default function LeaveApplicationForm() {
 
   const renderStepThree = () => (
     <View className="space-y-6">
-      <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+      <Text className="text-lg font-bold text-gray-800 dark:text-white">
         Application Details
       </Text>
-      <View className="space-y-4">
-        <View>
-          <Text className={`text-base mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
-            Reason for Leave
-          </Text>
-          <TextInput
-            className={`border rounded-xl p-4 h-32 text-base ${
-              isDarkMode 
-                ? "bg-gray-800 border-gray-600 text-white" 
-                : "bg-white border-gray-300 text-gray-700"
-            }`}
-            placeholder="Please provide a detailed reason..."
-            placeholderTextColor="#9CA3AF"
-            multiline
-            textAlignVertical="top"
-            value={formData.reason}
-            onChangeText={(value) => handleInputChange("reason", value)}
-          />
-          {errors.reason && (
-            <Text className="text-red-500 text-sm mt-1">{errors.reason}</Text>
-          )}
-        </View>
 
-        <View>
-          <Text className={`text-base mb-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
-            Supporting Documents
+      <View>
+        <Text className="mb-2 text-gray-700 dark:text-gray-300">
+          Reason for Leave
+        </Text>
+        <TextInput
+          multiline
+          textAlignVertical="top"
+          className="border rounded-xl p-4 h-32 bg-white border-gray-300 text-gray-700"
+          placeholder="Write your reason..."
+          placeholderTextColor="#9CA3AF"
+          value={formData.reason}
+          onChangeText={(v) => handleInputChange("reason", v)}
+        />
+        {errors.reason ? (
+          <Text className="text-red-500 text-sm mt-1">{errors.reason}</Text>
+        ) : null}
+      </View>
+
+      <View>
+        <Text className="mb-2 text-gray-700 dark:text-gray-300">
+          Supporting Documents
+        </Text>
+        <TouchableOpacity
+          className="flex-row items-center justify-center border-2 border-dashed rounded-xl p-6 bg-white border-gray-300"
+          onPress={handleDocumentUpload}
+        >
+          <Upload size={24} color="#3B82F6" />
+          <Text className="ml-2 text-blue-600 font-medium">
+            Upload Document
           </Text>
-          <TouchableOpacity
-            className={`flex-row items-center justify-center border-2 border-dashed rounded-xl p-6 ${
-              isDarkMode 
-                ? "bg-gray-800 border-gray-600" 
-                : "bg-white border-gray-300"
-            }`}
-            onPress={handleDocumentUpload}
-          >
-            <Upload size={24} color="#3B82F6" />
-            <Text className="ml-2 text-blue-600 font-medium">
-              Upload Document
+        </TouchableOpacity>
+
+        {formData.documents.length > 0 && (
+          <View className="mt-3">
+            <Text className="text-sm text-gray-600 mb-2">
+              Uploaded Documents:
             </Text>
-          </TouchableOpacity>
-
-          {formData.documents.length > 0 && (
-            <View className="mt-3">
-              <Text className={`text-sm mb-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-                Uploaded Documents:
-              </Text>
-              {formData.documents.map((doc, index) => (
-                <View
-                  key={index}
-                  className={`flex-row items-center rounded-lg p-3 mb-2 ${
-                    isDarkMode ? "bg-gray-700" : "bg-gray-100"
-                  }`}
-                >
-                  <CheckCircle size={16} color="#10B981" />
-                  <Text className={`ml-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
-                    {doc}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
+            {formData.documents.map((doc, i) => (
+              <View
+                key={i}
+                className="flex-row items-center bg-gray-100 rounded-lg p-3 mb-2"
+              >
+                <CheckCircle size={16} color="#10B981" />
+                <Text className="ml-2 text-gray-700">{doc}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -366,21 +367,21 @@ export default function LeaveApplicationForm() {
   };
 
   return (
-    <View 
-      className={`flex-1 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`} 
-      style={{ 
-        paddingBottom: insets.bottom, 
-        paddingLeft: insets.left, 
-        paddingRight: insets.right 
+    <View
+      className="flex-1 bg-gray-50"
+      style={{
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
       }}
     >
-      <StatusBar style="light" />
+      <StatusBar
+        style={isDarkMode ? "light" : "dark"}
+        backgroundColor={isDarkMode ? "#000" : "#fff"}
+      />
 
-      {/* Header */}
       <LinearGradient
-        colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
-        className="px-6 pb-6 rounded-b-3xl"
-        style={{ paddingTop: insets.top + 24 }}
+        colors={["#3B82F6", "#60A5FA"]}
+        className="px-6 pb-6 rounded-b-3xl pt-12"
       >
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4 p-1">
@@ -397,41 +398,28 @@ export default function LeaveApplicationForm() {
         </View>
       </LinearGradient>
 
-      {/* Progress Bar */}
-      <View className={`h-1 ${isDarkMode ? "bg-gray-700" : "bg-gray-200"}`}>
+      <View className="h-1 bg-gray-200">
         <View
           className="h-1 bg-blue-500 rounded-r"
           style={{ width: `${(currentStep / totalSteps) * 100}%` }}
         />
       </View>
 
-      {/* Form */}
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
         <View className="p-4">
-          <View className={`rounded-2xl p-5 shadow-sm ${
-            isDarkMode ? "bg-gray-800" : "bg-white"
-          }`}>
+          <View className="rounded-2xl p-5 bg-white shadow-sm">
             {renderCurrentStep()}
           </View>
         </View>
       </ScrollView>
 
-      {/* Navigation */}
-      <View className={`flex-row justify-between p-4 border-t ${
-        isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-      }`}>
+      <View className="flex-row justify-between p-4 border-t bg-white border-gray-200">
         <TouchableOpacity
-          className={`flex-row items-center px-5 py-3 rounded-xl ${
-            currentStep === 1
-              ? isDarkMode ? "bg-gray-700" : "bg-gray-100"
-              : "bg-blue-500"
-          }`}
           onPress={handlePrevious}
           disabled={currentStep === 1}
+          className={`flex-row items-center px-5 py-3 rounded-xl ${
+            currentStep === 1 ? "bg-gray-100" : "bg-blue-500"
+          }`}
         >
           <ChevronLeft
             size={20}
@@ -439,9 +427,7 @@ export default function LeaveApplicationForm() {
           />
           <Text
             className={`ml-1 font-medium ${
-              currentStep === 1
-                ? isDarkMode ? "text-gray-400" : "text-gray-500"
-                : "text-white"
+              currentStep === 1 ? "text-gray-500" : "text-white"
             }`}
           >
             Back
@@ -449,8 +435,8 @@ export default function LeaveApplicationForm() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="flex-row items-center px-5 py-3 bg-blue-500 rounded-xl"
           onPress={handleNext}
+          className="flex-row items-center px-5 py-3 bg-blue-500 rounded-xl"
         >
           <Text className="font-medium text-white">
             {currentStep === totalSteps ? "Submit" : "Next"}

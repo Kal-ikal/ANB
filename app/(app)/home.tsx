@@ -130,7 +130,7 @@ export default function DashboardScreen() {
       >
         <View className="flex-row justify-between items-center">
           <View>
-            <Text className="text-white text-2xl font-bold">LeaveManager</Text>
+            <Text className="text-white text-2xl font-bold">Annual & Benefit | User</Text>
             <Text className="text-blue-100 text-sm mt-1">
               Welcome back, Sarah!
             </Text>

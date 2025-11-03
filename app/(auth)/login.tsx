@@ -10,7 +10,7 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, Link } from "expo-router"; // --- DIUBAH --- (Link ditambahkan)
 import {
   Eye,
   EyeOff,
@@ -156,12 +156,18 @@ export default function LoginScreen() {
             {/* Header */}
             <View className="mb-16">
               <View className="flex-row items-center mb-8">
-                <TouchableOpacity
-                  onPress={() => router.replace("/")}
-                  className="bg-white/20 p-3 rounded-full mr-4"
-                >
-                  <Ionicons name="arrow-back-outline" size={28} color="white" />
-                </TouchableOpacity>
+                
+                {/* --- BLOK INI DIUBAH --- */}
+                <Link href="/" asChild>
+                  <TouchableOpacity
+                    // onPress={() => router.back()} <-- Dihapus
+                    className="bg-white/20 p-3 rounded-full mr-4"
+                  >
+                    <Ionicons name="arrow-back-outline" size={28} color="white" />
+                  </TouchableOpacity>
+                </Link>
+                {/* --- AKHIR BLOK --- */}
+
                 <View>
                   <Text className="text-white text-4xl font-bold">Welcome Back</Text>
                   <Text className="text-blue-100 text-xl mt-2">

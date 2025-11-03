@@ -1,39 +1,64 @@
-// app/_layout.tsx
 import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme, Platform } from "react-native";
+import { Platform, AppState } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as SystemUI from "expo-system-ui";
+import * as NavigationBar from "expo-navigation-bar";
 import "./global.css";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   useEffect(() => {
-    if (Platform.OS === "android") {
-      SystemUI.setBackgroundColorAsync(
-        colorScheme === "dark" ? "#0f172a" : "#ffffff"
-      );
-    }
-  }, [colorScheme]);
+    const configureNavbar = async () => {
+      if (Platform.OS === "android") {
+        try {
+          await NavigationBar.setBackgroundColorAsync("#EFF6FF");
+          await NavigationBar.setButtonStyleAsync("dark");
+        } catch (error) {
+          console.log("Navbar config error:", error);
+        }
+      }
+    };
+
+    configureNavbar();
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        setTimeout(configureNavbar, 100);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   return (
     <SafeAreaProvider>
-      <StatusBar 
+      <StatusBar
         style="dark"
-        backgroundColor="#DBEAFE"
+        backgroundColor="#EFF6FF"
         translucent={false}
       />
+
       <Stack
         screenOptions={{
           headerShown: false,
-          animation: "fade",
-          contentStyle: {
-            backgroundColor: colorScheme === "dark" ? "#0f172a" : "#ffffff",
-          },
+          animation: "slide_from_right", // default untuk semua
+          contentStyle: { backgroundColor: "#EFF6FF" },
         }}
-      />
+      >
+        {/* Halaman utama (index.tsx / landing) */}
+        <Stack.Screen
+          name="index"
+          options={{ animation: "slide_from_left" }}
+        />
+
+        {/* Grup (auth) - animasi masuk dari kiri */}
+        <Stack.Screen
+          name="(auth)"
+          options={{
+            animation: "slide_from_right",
+          }}
+        />
+      </Stack>
     </SafeAreaProvider>
   );
 }

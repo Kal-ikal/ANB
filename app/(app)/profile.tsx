@@ -50,7 +50,7 @@ export default function ProfileScreen() {
       type: "Sick Leave",
       startDate: "2023-11-05",
       endDate: "2023-11-07",
-      status: "Approved",
+      status: "Rejected",
     },
     {
       id: 3,
