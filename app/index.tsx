@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, RefreshControl, StyleSheet, Platform } from "react-native";
-import { useRouter } from "expo-router";
+import { useSmartNavigation } from '../hooks/useSmartNavigation';
+import { useCustomBackHandler } from '../hooks/useCustomBackHandler'; // ← TAMBAH
 import { Calendar, BarChart2, Users, Shield, Plus } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import "./global.css"
 
 interface Feature {
   icon: React.JSX.Element;
@@ -17,7 +19,9 @@ interface FAQ {
 }
 
 const LandingScreen: React.FC = () => {
-  const router = useRouter();
+  const { navigateToDetail } = useSmartNavigation(); // ← HAPUS backToRoot
+  useCustomBackHandler(); // ← TAMBAH - handle semua back logic
+  
   const [activeFeature, setActiveFeature] = useState<number>(0);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
@@ -63,6 +67,15 @@ const LandingScreen: React.FC = () => {
     }
   ];
 
+  // ❌ HAPUS SELURUH useEffect INI - sudah digantikan useCustomBackHandler
+  // useEffect(() => {
+  //   const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+  //     BackHandler.exitApp();
+  //     return true;
+  //   });
+  //   return () => backHandler.remove();
+  // }, []);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
@@ -96,6 +109,7 @@ const LandingScreen: React.FC = () => {
           />
         }
       >
+        {/* Rest of the code remains the same... */}
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -124,8 +138,9 @@ const LandingScreen: React.FC = () => {
                 resizeMode="cover"
               />
             </View>
+            
             <TouchableOpacity
-              onPress={() => router.push("/(auth)/login")}
+              onPress={() => navigateToDetail("/(auth)/login")}
               style={styles.primaryButton}
             >
               <Text style={styles.primaryButtonText}>Get Started</Text>
@@ -139,7 +154,6 @@ const LandingScreen: React.FC = () => {
             Why Choose Annual & Benefit?
           </Text>
 
-          {/* Feature Carousel */}
           <View style={styles.carouselContainer}>
             <View style={styles.carouselContent}>
               <View style={styles.featureIconContainer}>
@@ -155,7 +169,6 @@ const LandingScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* Navigation Controls */}
             <View style={styles.carouselControls}>
               <View style={styles.dotsContainer}>
                 {features.map((_, index) => (
@@ -187,7 +200,6 @@ const LandingScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* All Features Grid */}
           <View style={styles.featuresGrid}>
             {features.map((feature, index) => (
               <TouchableOpacity
@@ -212,7 +224,6 @@ const LandingScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* FAQ Section */}
         <View style={styles.faqSection}>
           <Text style={styles.sectionTitle}>
             Frequently Asked Questions
@@ -242,7 +253,6 @@ const LandingScreen: React.FC = () => {
           </View>
         </View>
         
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             © 2025 Annual & Benefit. All rights reserved.

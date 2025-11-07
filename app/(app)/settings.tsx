@@ -73,17 +73,19 @@ export default function SettingsScreen() {
       [type]: !prev[type],
     }));
   };
-
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Logout",
-        onPress: () => router.replace("/"),
         style: "destructive",
+        onPress: () => {
+          router.replace("/"); // ✅ ganti replace saja
+        },
       },
     ]);
   };
+
 
   return (
     // 👈 4. GANTI View statis dengan View dinamis + insets

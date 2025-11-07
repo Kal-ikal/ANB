@@ -8,8 +8,9 @@ import {
   Alert,
   Platform,
   Appearance,
+  BackHandler,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +21,7 @@ import {
   Calendar,
   Upload,
   CheckCircle,
+  X,
 } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
@@ -48,7 +50,7 @@ export default function LeaveApplicationForm() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // === THEME MODE (sementara, nanti bisa diganti ke ThemeContext) ===
+  // === THEME MODE ===
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -82,13 +84,87 @@ export default function LeaveApplicationForm() {
   const [tempDate, setTempDate] = useState(new Date());
   const totalSteps = 3;
 
+  // 🔥 SOLUSI UTAMA: RESET STATE SETIAP KALI HALAMAN FOKUS
+  useFocusEffect(
+    useCallback(() => {
+      console.log("🔄 Resetting leave application form to step 1");
+      
+      // Reset semua state ke default
+      setCurrentStep(1);
+      setFormData({
+        leaveType: "",
+        startDate: "",
+        endDate: "",
+        reason: "",
+        days: 0,
+        documents: [],
+      });
+      setErrors({});
+      setShowDatePicker(false);
+      
+      return () => {
+        // Cleanup ketika screen unfocus
+        console.log("👋 Leave application screen unfocused");
+      };
+    }, [])
+  );
+
+  // 🔥 HARDWARE BACK BUTTON HANDLER
+  useFocusEffect(
+    useCallback(() => {
+      const handleBackPress = () => {
+        if (currentStep > 1) {
+          // Jika di step 2 atau 3, kembali ke step sebelumnya
+          setCurrentStep(currentStep - 1);
+          return true; // Prevent default behavior
+        } else {
+          // Jika di step 1, confirm cancel
+          const hasData =
+            formData.leaveType ||
+            formData.startDate ||
+            formData.endDate ||
+            formData.reason ||
+            formData.documents.length > 0;
+
+          if (!hasData) {
+            router.back();
+            return true;
+          }
+
+          Alert.alert(
+            "Cancel Leave Application?",
+            "Your progress will be lost. Are you sure?",
+            [
+              { text: "Stay", style: "cancel" },
+              {
+                text: "Yes, Cancel",
+                style: "destructive",
+                onPress: () => {
+                  router.replace("/home");
+                },
+              },
+            ]
+          );
+          return true; // Prevent default behavior
+        }
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        handleBackPress
+      );
+
+      return () => backHandler.remove();
+    }, [currentStep, formData, router])
+  );
+
   // === HITUNG JUMLAH HARI CUTI (n-1) ===
   const calculateDays = useCallback(() => {
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
       const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // n-1
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       setFormData((prev) => ({ ...prev, days: diffDays }));
     } else {
       setFormData((prev) => ({ ...prev, days: 0 }));
@@ -126,20 +202,62 @@ export default function LeaveApplicationForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // 🔥 HANDLE NEXT/SUBMIT dengan Stack Cleanup
   const handleNext = () => {
     if (validateStep()) {
-      if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
-      else
-        Alert.alert(
-          "Leave Application Submitted",
-          "Your leave application has been submitted.",
-          [{ text: "OK", onPress: () => router.push("/(app)/home") }]
-        );
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        // Step 3 - Submit
+        handleSubmit();
+      }
     }
   };
 
+  const handleSubmit = () => {
+    Alert.alert(
+      "Submit Leave Application?",
+      `You are applying for ${formData.days} days of leave from ${formatDate(
+        formData.startDate
+      )} to ${formatDate(formData.endDate)}`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Submit",
+          onPress: async () => {
+            // Simulasi API call
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            Alert.alert(
+              "Application Submitted",
+              "Your leave application has been submitted successfully.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    // 🔥 PENTING: Gunakan replace untuk cleanup stack
+                    // Stack sebelum: [Home, Pengajuan]
+                    // Stack sesudah: [Home]
+                    router.replace("/home");
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
   const handlePrevious = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // 🔥 DIRECT BACK - Tanpa konfirmasi, langsung kembali
+  const handleDirectBack = () => {
+    router.back();
   };
 
   const showPicker = (field: "start" | "end") => {
@@ -383,18 +501,28 @@ export default function LeaveApplicationForm() {
         colors={["#3B82F6", "#60A5FA"]}
         className="px-6 pb-6 rounded-b-3xl pt-12"
       >
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-4 p-1">
-            <ChevronLeft color="white" size={24} />
-          </TouchableOpacity>
-          <View>
-            <Text className="text-white text-xl font-bold">
-              Leave Application
-            </Text>
-            <Text className="text-blue-100 text-sm mt-1">
-              Step {currentStep} of {totalSteps}
-            </Text>
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center flex-1">
+            <TouchableOpacity 
+              onPress={currentStep > 1 ? handlePrevious : handleDirectBack} 
+              className="mr-4 p-1"
+            >
+              <ChevronLeft color="white" size={24} />
+            </TouchableOpacity>
+            <View>
+              <Text className="text-white text-xl font-bold">
+                Leave Application
+              </Text>
+              <Text className="text-blue-100 text-sm mt-1">
+                Step {currentStep} of {totalSteps}
+              </Text>
+            </View>
           </View>
+
+          {/* 🔥 DIRECT BACK BUTTON - Langsung back tanpa konfirmasi */}
+          <TouchableOpacity onPress={handleDirectBack} className="p-1">
+            <X color="white" size={24} />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 

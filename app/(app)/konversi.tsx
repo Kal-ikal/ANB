@@ -13,7 +13,6 @@ import { cssInterop } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
-// Arahkan cssInterop ke komponen yang benar dari Expo
 cssInterop(LinearGradient, { className: "style" });
 
 export default function LeaveConversionScreen() {
@@ -61,10 +60,23 @@ export default function LeaveConversionScreen() {
           text: "Confirm",
           onPress: () => {
             setConversionRequested(true);
+            
+            // 🔥 PERBAIKAN: Gunakan replace untuk cleanup stack
+            // Setelah success, langsung ke home tanpa menumpuk stack
             Alert.alert(
               "Conversion Requested",
               "Your leave conversion request has been submitted successfully. You will receive a confirmation email shortly.",
-              [{ text: "OK", onPress: () => router.push("../(app)/home") }]
+              [
+                { 
+                  text: "OK", 
+                  onPress: () => {
+                    // Replace ke home untuk membersihkan stack
+                    // Stack sebelum: [Home, Konversi]
+                    // Stack sesudah: [Home]
+                    router.replace("/home");
+                  } 
+                }
+              ]
             );
           },
         },
@@ -337,7 +349,7 @@ export default function LeaveConversionScreen() {
               "Conversion requests are processed within 5 business days",
               "Converted amounts will be added to your next paycheck",
             ].map((text, i) => (
-              <View key={i} className="flex-row items-start">
+              <View key={i} className="flex-row items-start mb-3">
                 <CheckCircle
                   color={isDarkMode ? "#10B981" : "#059669"}
                   size={20}
@@ -346,7 +358,7 @@ export default function LeaveConversionScreen() {
                 <Text
                   className={`${
                     isDarkMode ? "text-gray-300" : "text-gray-600"
-                  } ml-3`}
+                  } ml-3 flex-1`}
                 >
                   {text}
                 </Text>

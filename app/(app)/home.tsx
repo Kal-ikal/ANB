@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -21,14 +21,11 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
-import { useRouter, useFocusEffect } from "expo-router";
+import { Link, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
-// ✅ Pastikan LinearGradient bisa pakai className
 cssInterop(LinearGradient, { className: "style" });
-
-// ✅ Nonaktifkan interop pada Switch supaya animasi native tidak terganggu
 cssInterop(Switch, { className: false });
 
 const screenWidth = Dimensions.get("window").width;
@@ -38,6 +35,7 @@ type QuickAction = {
   title: string;
   icon: React.JSX.Element;
   link: "/pengajuan" | "/konversi" | "/profile" | "/settings";
+  useLink: boolean; // true = Link, false = router.push
 };
 
 export default function DashboardScreen() {
@@ -46,18 +44,37 @@ export default function DashboardScreen() {
   const [switchReady, setSwitchReady] = useState(false);
   const router = useRouter();
 
-  // ✅ Ini akan berjalan SETIAP KALI layar kembali fokus
+  // ✅ PREFETCH: Preload halaman yang sering diakses
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('📦 Prefetching frequent pages...');
+      // Prioritas tinggi
+      router.prefetch('/pengajuan');
+      
+      // Prioritas medium (delay lebih lama)
+      setTimeout(() => {
+        router.prefetch('/profile');
+        router.prefetch('/konversi');
+      }, 1500);
+      
+      // Prioritas rendah
+      setTimeout(() => {
+        router.prefetch('/settings');
+      }, 3000);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [router]);
+
   useFocusEffect(
     useCallback(() => {
-      // Jalan saat layar FOKUS
       const t = setTimeout(() => setSwitchReady(true), 50);
 
-      // Jalan saat layar DITINGGALKAN (cleanup)
       return () => {
-        setSwitchReady(false); // Unmount Switch & Ikon saat pindah halaman
+        setSwitchReady(false);
         clearTimeout(t);
       };
-    }, []) // Dependency array tetap kosong
+    }, [])
   );
 
   const leaveBalances = [
@@ -87,29 +104,37 @@ export default function DashboardScreen() {
       title: "Apply Leave",
       icon: <FileText color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/pengajuan",
+      useLink: false, // Pakai router.push karena ada complex flow
     },
     {
       id: 2,
       title: "Convert Leave",
       icon: <DollarSign color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/konversi",
+      useLink: false, // Pakai router.push karena ada complex flow
     },
     {
       id: 3,
       title: "My Profile",
       icon: <User color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/profile",
+      useLink: true, // Pakai Link karena simple navigation
     },
     {
       id: 4,
       title: "Settings",
       icon: <Settings color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/settings",
+      useLink: true, // Pakai Link karena simple navigation
     },
   ];
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
-  const handleQuickActionPress = (link: QuickAction["link"]) => router.push(link);
+  
+  // Untuk action yang pakai router.push (Apply Leave, Convert Leave)
+  const handleQuickActionPress = (link: QuickAction["link"]) => {
+    router.push(link);
+  };
 
   return (
     <View
@@ -137,8 +162,6 @@ export default function DashboardScreen() {
           </View>
 
           <View className="flex-row items-center">
-            
-            {/* 👈 PERBAIKAN DI SINI: Bungkus Ikon dan Switch dalam satu kondisional */}
             {switchReady && (
               <>
                 {isDarkMode ? (
@@ -157,7 +180,6 @@ export default function DashboardScreen() {
                 </View>
               </>
             )}
-            
           </View>
         </View>
       </LinearGradient>
@@ -168,8 +190,6 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 80 }}
       >
-        {/* ... (sisa konten ScrollView Anda tetap sama) ... */}
-        
         <View className="px-4 mt-6">
           {/* Leave Balances */}
           <View className="mb-6">
@@ -333,30 +353,62 @@ export default function DashboardScreen() {
               Quick Actions
             </Text>
             <View className="flex-row flex-wrap gap-4">
-              {quickActions.map((action) => (
-                <TouchableOpacity
-                  key={action.id}
-                  onPress={() => handleQuickActionPress(action.link)}
-                  className={`${
-                    isDarkMode ? "bg-gray-800" : "bg-white"
-                  } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
-                >
-                  <View
-                    className={`${
-                      isDarkMode ? "bg-gray-700" : "bg-blue-100"
-                    } p-3 rounded-full mb-2`}
-                  >
-                    {action.icon}
-                  </View>
-                  <Text
-                    className={`${
-                      isDarkMode ? "text-white" : "text-[#1A1D23]"
-                    } font-semibold`}
-                  >
-                    {action.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {quickActions.map((action) => {
+                // 🔥 HYBRID: Pakai Link untuk simple, router.push untuk complex
+                if (action.useLink) {
+                  // Profile & Settings pakai Link (simple navigation)
+                  return (
+                    <Link key={action.id} href={action.link} asChild>
+                      <TouchableOpacity
+                        className={`${
+                          isDarkMode ? "bg-gray-800" : "bg-white"
+                        } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
+                      >
+                        <View
+                          className={`${
+                            isDarkMode ? "bg-gray-700" : "bg-blue-100"
+                          } p-3 rounded-full mb-2`}
+                        >
+                          {action.icon}
+                        </View>
+                        <Text
+                          className={`${
+                            isDarkMode ? "text-white" : "text-[#1A1D23]"
+                          } font-semibold`}
+                        >
+                          {action.title}
+                        </Text>
+                      </TouchableOpacity>
+                    </Link>
+                  );
+                } else {
+                  // Apply Leave & Convert pakai router.push (complex flow)
+                  return (
+                    <TouchableOpacity
+                      key={action.id}
+                      onPress={() => handleQuickActionPress(action.link)}
+                      className={`${
+                        isDarkMode ? "bg-gray-800" : "bg-white"
+                      } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
+                    >
+                      <View
+                        className={`${
+                          isDarkMode ? "bg-gray-700" : "bg-blue-100"
+                        } p-3 rounded-full mb-2`}
+                      >
+                        {action.icon}
+                      </View>
+                      <Text
+                        className={`${
+                          isDarkMode ? "text-white" : "text-[#1A1D23]"
+                        } font-semibold`}
+                      >
+                        {action.title}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
+              })}
             </View>
           </View>
 

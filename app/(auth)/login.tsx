@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   Platform,
   Animated,
   Easing,
+  BackHandler,
 } from "react-native";
-import { useRouter, Link } from "expo-router"; // --- DIUBAH --- (Link ditambahkan)
+import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 import {
   Eye,
   EyeOff,
@@ -33,7 +34,7 @@ cssInterop(CheckCircle, { className: "style" });
 cssInterop(XCircle, { className: "style" });
 
 export default function LoginScreen() {
-  const router = useRouter();
+  const { navigateToApp, navigateToDetail, backToRoot } = useSmartNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -43,6 +44,16 @@ export default function LoginScreen() {
     type: null,
     message: "",
   });
+
+  // Back handler untuk login page
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      backToRoot();
+      return true;
+    });
+
+    return () => backHandler.remove();
+  }, [backToRoot]);
 
   // Animations
   const eyeAnim = useRef(new Animated.Value(1)).current;
@@ -104,7 +115,6 @@ export default function LoginScreen() {
     }
   };
 
-  // Smooth fade-out transition with optimized delay
   const handleLogin = () => {
     if (validateForm()) {
       setIsLoading(true);
@@ -114,28 +124,26 @@ export default function LoginScreen() {
         if (email === "user@example.com" && password === "password123") {
           showAlert("success", "Login successful! Redirecting...");
           
-          // Optimized delay before fade out
           setTimeout(() => {
-            // Smooth fade-out animation
             Animated.timing(fadeAnim, {
               toValue: 0,
               duration: 500,
               easing: Easing.out(Easing.quad),
               useNativeDriver: true,
             }).start(() => {
-              router.replace("../(app)/home");
+              navigateToApp();
             });
-          }, 1200); // Reduced to 1.8 seconds
+          }, 1200);
         } else {
           showAlert("error", "Invalid email or password.");
         }
-      }, 700); // Reduced loading time
+      }, 700);
     } else {
       showAlert("error", "Please fill in all fields correctly.");
     }
   };
 
-  const handleForgotPassword = () => router.push("/forgot-password");
+  const handleForgotPassword = () => navigateToDetail('/(auth)/forgot-password');
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
@@ -156,17 +164,13 @@ export default function LoginScreen() {
             {/* Header */}
             <View className="mb-16">
               <View className="flex-row items-center mb-8">
-                
-                {/* --- BLOK INI DIUBAH --- */}
-                <Link href="/" asChild>
-                  <TouchableOpacity
-                    // onPress={() => router.back()} <-- Dihapus
-                    className="bg-white/20 p-3 rounded-full mr-4"
-                  >
-                    <Ionicons name="arrow-back-outline" size={28} color="white" />
-                  </TouchableOpacity>
-                </Link>
-                {/* --- AKHIR BLOK --- */}
+                {/* Back Button - selalu ke root */}
+                <TouchableOpacity
+                  onPress={backToRoot}
+                  className="bg-white/20 p-3 rounded-full mr-4"
+                >
+                  <Ionicons name="arrow-back-outline" size={28} color="white" />
+                </TouchableOpacity>
 
                 <View>
                   <Text className="text-white text-4xl font-bold">Welcome Back</Text>
@@ -275,7 +279,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Animated Alert - POSITION ABSOLUTE di atas footer */}
+            {/* Animated Alert */}
             {alert.type && (
               <Animated.View
                 style={{

@@ -1,29 +1,38 @@
-import { Stack } from "expo-router";
-import React from "react";
+import { Stack } from 'expo-router';
+import { StyleSheet } from 'react-native';
 
 export default function AuthLayout() {
   return (
-    // Pengaturan ini berlaku untuk SEMUA layar di grup (auth)
-    <Stack screenOptions={{ headerShown: false }}>
-
-      {/* Pengaturan spesifik untuk 'login' */}
-      <Stack.Screen
-        name="login"
-        options={{
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: styles.background,
+        animation: 'slide_from_right',
+        animationDuration: 300,
+        gestureEnabled: true,
+        gestureDirection: 'horizontal',
+      }}
+    >
+      <Stack.Screen 
+        name="login" 
+        options={{ 
           animation: 'fade',
-        }}
+          gestureEnabled: false 
+        }} 
       />
-
-      {/* Pengaturan spesifik untuk 'forgot-password' */}
-      <Stack.Screen
-        name="forgot-password"
-        options={{
-          // Animasi ini akan slide & fade dari bawah saat masuk,
-          // dan slide & fade ke bawah saat keluar (pop).
+      <Stack.Screen 
+        name="forgot-password" 
+        options={{ 
           animation: 'fade_from_bottom',
-        }}
+          gestureEnabled: true
+        }} 
       />
-
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  background: {
+    backgroundColor: '#EFF6FF',
+  },
+});
