@@ -8,8 +8,6 @@ export function useCustomBackHandler() {
   const { backToRoot, navigateToRoot } = useSmartNavigation();
 
   const backHandler = useCallback(() => {
-    console.log('Back handler triggered for path:', pathname);
-
     // ✅ Case 1: Jika di landing page (root) - exit app
     if (pathname === '/' || pathname === '/index') {
       BackHandler.exitApp();

@@ -1,3 +1,4 @@
+// app/(app)/home.tsx
 import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
@@ -24,7 +25,7 @@ import { cssInterop } from "nativewind";
 import { Link, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useTheme } from "@/context/ThemeContext"; // ✅ IMPORT
+import { useTheme } from "@/context/ThemeContext";
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -41,33 +42,28 @@ type QuickAction = {
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { isDarkMode, toggleTheme } = useTheme(); // ✅ GUNAKAN context
+  const { isDarkMode, toggleTheme } = useTheme();
   const [switchReady, setSwitchReady] = useState(false);
   const router = useRouter();
 
-  // ✅ PREFETCH: Preload halaman yang sering diakses
+  // PREFETCH
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('📦 Prefetching frequent pages...');
-      router.prefetch('/pengajuan');
-      
+      router.prefetch("/pengajuan");
       setTimeout(() => {
-        router.prefetch('/profile');
-        router.prefetch('/konversi');
+        router.prefetch("/profile");
+        router.prefetch("/konversi");
       }, 1500);
-      
       setTimeout(() => {
-        router.prefetch('/settings');
+        router.prefetch("/settings");
       }, 3000);
     }, 1000);
-    
     return () => clearTimeout(timer);
   }, [router]);
 
   useFocusEffect(
     useCallback(() => {
       const t = setTimeout(() => setSwitchReady(true), 50);
-
       return () => {
         setSwitchReady(false);
         clearTimeout(t);
@@ -150,7 +146,9 @@ export default function DashboardScreen() {
       >
         <View className="flex-row justify-between items-center">
           <View>
-            <Text className="text-white text-2xl font-bold">Annual & Benefit | User</Text>
+            <Text className="text-white text-2xl font-bold">
+              Annual & Benefit | User
+            </Text>
             <Text className="text-blue-100 text-sm mt-1">
               Welcome back, Sarah!
             </Text>
@@ -158,13 +156,13 @@ export default function DashboardScreen() {
 
           <View className="flex-row items-center">
             {switchReady && (
-              <>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
                 {isDarkMode ? (
                   <Moon color="white" size={20} />
                 ) : (
                   <Sun color="white" size={20} />
                 )}
-              
+
                 <View className="ml-2">
                   <Switch
                     value={isDarkMode}
@@ -173,7 +171,7 @@ export default function DashboardScreen() {
                     thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
                   />
                 </View>
-              </>
+              </View>
             )}
           </View>
         </View>
@@ -418,10 +416,7 @@ export default function DashboardScreen() {
               >
                 Upcoming Leaves
               </Text>
-              <Calendar
-                color={isDarkMode ? "#9CA3AF" : "#6B7280"}
-                size={20}
-              />
+              <Calendar color={isDarkMode ? "#9CA3AF" : "#6B7280"} size={20} />
             </View>
 
             <View className="flex-row items-center mb-3">
@@ -450,9 +445,7 @@ export default function DashboardScreen() {
                 >
                   Sick Leave
                 </Text>
-                <Text className="text-gray-500 text-sm">
-                  05 Jan 2024 • 2 days
-                </Text>
+                <Text className="text-gray-500 text-sm">05 Jan 2024 • 2 days</Text>
               </View>
             </View>
           </View>
@@ -463,6 +456,7 @@ export default function DashboardScreen() {
       <TouchableOpacity
         onPress={() => router.push("/pengajuan")}
         className="absolute bottom-10 right-6 bg-blue-500 p-4 rounded-full shadow-lg"
+        activeOpacity={0.8}
       >
         <Calendar color="white" size={24} />
       </TouchableOpacity>

@@ -100,7 +100,6 @@ export default function LeaveApplicationForm() {
   // Reset form saat screen fokus
   useFocusEffect(
     useCallback(() => {
-      console.log("🔄 Resetting leave application form");
 
       setCurrentStep(1);
       setFormData({
@@ -115,9 +114,7 @@ export default function LeaveApplicationForm() {
       setShowDatePicker(false);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
 
-      return () => {
-        console.log("👋 Leave application screen unfocused");
-      };
+      return () => {};
     }, [])
   );
 

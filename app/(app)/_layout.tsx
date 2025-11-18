@@ -1,7 +1,7 @@
 //app/(app)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { Home, FileText, User, Settings } from 'lucide-react-native';
+import { Home, FileText, User, Settings, DollarSign } from 'lucide-react-native';
 
 export default function AppLayout() {
   return (
@@ -35,7 +35,7 @@ export default function AppLayout() {
         name="konversi" 
         options={{ 
           title: 'Konversi',
-          tabBarIcon: ({ color, size }) => <FileText size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <DollarSign size={size} color={color} />,
         }} 
       />
       <Tabs.Screen 
