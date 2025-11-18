@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+//app/_layout.tsx
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -7,6 +8,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import { enableScreens, enableFreeze } from "react-native-screens";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useCustomBackHandler } from '../hooks/useCustomBackHandler';
+import { ThemeProvider } from "../context/ThemeContext";
 import "./global.css";
 
 // ✅ Aktifkan native screens & freeze untuk performa maksimal
@@ -14,7 +16,6 @@ enableScreens(true);
 enableFreeze(true);
 
 export default function RootLayout() {
-  // ✅ INIT BACK HANDLER - penting untuk global back behavior
   useCustomBackHandler();
 
   useEffect(() => {
@@ -36,49 +37,27 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" backgroundColor="#EFF6FF" />
-        
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: "#EFF6FF" },
-            freezeOnBlur: true,
-            animation: 'slide_from_right',
-            animationDuration: 300,
-            gestureEnabled: true,
-            gestureDirection: 'horizontal',
-            fullScreenGestureEnabled: true,
-          }}
-        >
-          <Stack.Screen 
-            name="index" 
-            options={{ 
-              animation: 'fade',
-              gestureEnabled: false
-            }} 
-          />
-          <Stack.Screen 
-            name="(auth)" 
-            options={{ 
-              animation: 'slide_from_right'
-            }} 
-          />
-          <Stack.Screen
-            name="(app)"
-            options={{
-              animation: 'slide_from_right',
-              gestureEnabled: false,
+        <ThemeProvider> {/* ⬅️ WAJIB di sini */}
+          <StatusBar style="dark" backgroundColor="#EFF6FF" />
+
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: "#EFF6FF" },
+              freezeOnBlur: true,
+              animation: "slide_from_right",
+              animationDuration: 300,
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+              fullScreenGestureEnabled: true,
             }}
-          />
-          <Stack.Screen 
-            name="(modals)" 
-            options={{ 
-              presentation: 'modal',
-              animation: 'slide_from_bottom',
-              gestureEnabled: true
-            }} 
-          />
-        </Stack>
+          >
+            <Stack.Screen name="index" options={{ animation: "fade", gestureEnabled: false }} />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(app)" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="(modals)" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+          </Stack>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

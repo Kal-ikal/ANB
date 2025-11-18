@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -25,18 +25,17 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
-// 👈 1. IMPORT Insets dan Status Bar (Konsistensi Layout)
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useTheme } from '@/context/ThemeContext';
 
 cssInterop(LinearGradient, { className: "style" });
-// 👈 2. TAMBAHKAN INI: Perbaikan untuk animasi Switch
 cssInterop(Switch, { className: false });
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets(); // 👈 3. DAPATKAN nilai insets
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { isDarkMode, toggleTheme } = useTheme(); // ✅ GUNAKAN context
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -60,9 +59,10 @@ export default function SettingsScreen() {
     { type: "Paternity Leave", days: 10, carryOver: 0, maxConsecutive: 10 },
   ];
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    Alert.alert("Theme Changed", `Switched to ${!isDarkMode ? "dark" : "light"} mode`, [
+  // ✅ Wrapper untuk toggleTheme dengan Alert
+  const handleToggleTheme = () => {
+    toggleTheme();
+    Alert.alert("Theme Changed", `Switched to ${!isDarkMode ? 'dark' : 'light'} mode`, [
       { text: "OK" },
     ]);
   };
@@ -73,6 +73,7 @@ export default function SettingsScreen() {
       [type]: !prev[type],
     }));
   };
+
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
@@ -80,36 +81,24 @@ export default function SettingsScreen() {
         text: "Logout",
         style: "destructive",
         onPress: () => {
-          router.replace("/"); // ✅ ganti replace saja
+          router.replace("/");
         },
       },
     ]);
   };
 
-
   return (
-    // 👈 4. GANTI View statis dengan View dinamis + insets
-    <View 
-      className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
-      style={{
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-      }}
-    >
-      {/* 👈 5. TAMBAHKAN Status Bar */}
+    <View className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}>
       <StatusBar style="light" />
-
+      
       {/* Header */}
       <LinearGradient
         colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
-        // 👈 6. UBAH `p-6` menjadi `px-6 pb-6` dan TAMBAHKAN style
         className="px-6 pb-6 rounded-b-3xl"
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: insets.top + 24 }}
       >
-        {/* 👈 7. HAPUS `mt-10` */}
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <ChevronLeft color="white" size={24} />
@@ -127,10 +116,9 @@ export default function SettingsScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        // 👈 8. HAPUS `contentContainerStyle` statis
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
         <View className="px-4 mt-6">
-          {/* ... (sisa kode card Anda tetap sama, tidak perlu diubah) ... */}
           
           {/* Account */}
           <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-5 shadow-md mb-6`}>
@@ -140,7 +128,6 @@ export default function SettingsScreen() {
                 Account
               </Text>
             </View>
-            {/* ... data user ... */}
             <View className="mb-4">
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
                 Name
@@ -210,7 +197,7 @@ export default function SettingsScreen() {
               </View>
               <Switch
                 value={isDarkMode}
-                onValueChange={toggleTheme}
+                onValueChange={handleToggleTheme}
                 trackColor={{ false: "#D1D5DB", true: "#6B7280" }}
                 thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
               />
@@ -246,7 +233,6 @@ export default function SettingsScreen() {
             ))}
           </View>
 
-          {/* ... (sisa card lainnya: Leave Policy, Security, Logout) ... */}
           {/* Leave Policy */}
           <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-xl p-5 shadow-md mb-6`}>
             <View className="flex-row items-center mb-4">

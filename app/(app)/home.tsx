@@ -24,6 +24,7 @@ import { cssInterop } from "nativewind";
 import { Link, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useTheme } from "@/context/ThemeContext"; // ✅ IMPORT
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -35,12 +36,12 @@ type QuickAction = {
   title: string;
   icon: React.JSX.Element;
   link: "/pengajuan" | "/konversi" | "/profile" | "/settings";
-  useLink: boolean; // true = Link, false = router.push
+  useLink: boolean;
 };
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme(); // ✅ GUNAKAN context
   const [switchReady, setSwitchReady] = useState(false);
   const router = useRouter();
 
@@ -48,16 +49,13 @@ export default function DashboardScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
       console.log('📦 Prefetching frequent pages...');
-      // Prioritas tinggi
       router.prefetch('/pengajuan');
       
-      // Prioritas medium (delay lebih lama)
       setTimeout(() => {
         router.prefetch('/profile');
         router.prefetch('/konversi');
       }, 1500);
       
-      // Prioritas rendah
       setTimeout(() => {
         router.prefetch('/settings');
       }, 3000);
@@ -104,34 +102,31 @@ export default function DashboardScreen() {
       title: "Apply Leave",
       icon: <FileText color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/pengajuan",
-      useLink: false, // Pakai router.push karena ada complex flow
+      useLink: false,
     },
     {
       id: 2,
       title: "Convert Leave",
       icon: <DollarSign color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/konversi",
-      useLink: false, // Pakai router.push karena ada complex flow
+      useLink: false,
     },
     {
       id: 3,
       title: "My Profile",
       icon: <User color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/profile",
-      useLink: true, // Pakai Link karena simple navigation
+      useLink: true,
     },
     {
       id: 4,
       title: "Settings",
       icon: <Settings color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
       link: "/settings",
-      useLink: true, // Pakai Link karena simple navigation
+      useLink: true,
     },
   ];
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-  
-  // Untuk action yang pakai router.push (Apply Leave, Convert Leave)
   const handleQuickActionPress = (link: QuickAction["link"]) => {
     router.push(link);
   };
@@ -354,9 +349,7 @@ export default function DashboardScreen() {
             </Text>
             <View className="flex-row flex-wrap gap-4">
               {quickActions.map((action) => {
-                // 🔥 HYBRID: Pakai Link untuk simple, router.push untuk complex
                 if (action.useLink) {
-                  // Profile & Settings pakai Link (simple navigation)
                   return (
                     <Link key={action.id} href={action.link} asChild>
                       <TouchableOpacity
@@ -382,7 +375,6 @@ export default function DashboardScreen() {
                     </Link>
                   );
                 } else {
-                  // Apply Leave & Convert pakai router.push (complex flow)
                   return (
                     <TouchableOpacity
                       key={action.id}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -12,17 +12,17 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
-// 👈 1. IMPORT Insets dan Status Bar
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useTheme } from "@/context/ThemeContext"; // ✅ IMPORT
 
 cssInterop(LinearGradient, { className: "style" });
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets(); // 👈 2. DAPATKAN nilai insets
+  const insets = useSafeAreaInsets();
+  const { isDarkMode } = useTheme(); // ✅ GUNAKAN context
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [isDarkMode] = useState(false); // atau dari context/global state
 
   const employeeData = {
     name: "Alex Morgan",
@@ -59,32 +59,20 @@ export default function ProfileScreen() {
       endDate: "2023-10-12",
       status: "Pending",
     },
-    // ... data lainnya
   ];
 
   return (
-    // 👈 3. GANTI View statis dengan View dinamis + insets
-    <View 
-      className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
-      style={{
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-      }}
-    >
-      {/* 👈 4. TAMBAHKAN Status Bar */}
+    <View className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}>
       <StatusBar style="light" />
 
       {/* Header dengan Back Button */}
       <LinearGradient
         colors={isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
-        // 👈 5. UBAH `p-6` menjadi `px-6 pb-6` dan TAMBAHKAN style
         className="px-6 pb-6 rounded-b-3xl"
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: insets.top + 24 }}
       >
-        {/* 👈 6. HAPUS `mt-10` */}
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <ChevronLeft color="white" size={24} />
@@ -104,7 +92,7 @@ export default function ProfileScreen() {
       <ScrollView
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
-        // 👈 7. HAPUS `contentContainerStyle` statis
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
         {/* Profile Header */}
         <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 mb-6 shadow-md`}>

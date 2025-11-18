@@ -1,6 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState, useCallback, useRef, useMemo } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   ChevronLeft,
   Info,
@@ -12,46 +18,104 @@ import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useTheme } from "@/context/ThemeContext";
 
 cssInterop(LinearGradient, { className: "style" });
+
+// ✅ Type definitions
+type LeaveBalance = {
+  type: string;
+  days: number;
+  used: number;
+  eligible: number;
+  rate: number;
+};
+
+type TaxBracket = {
+  min: number;
+  max: number | string;
+  rate: number;
+};
 
 export default function LeaveConversionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isDarkMode] = useState(false);
+  const { isDarkMode: isDark } = useTheme();
   const [conversionRequested, setConversionRequested] = useState(false);
 
-  // Data saldo cuti (mock)
-  const leaveBalances = [
-    { type: "Annual", days: 15, used: 7, eligible: 8, rate: 150 },
-    { type: "Sick", days: 10, used: 2, eligible: 0, rate: 100 },
-    { type: "Special", days: 5, used: 1, eligible: 2, rate: 200 },
-  ];
+  // ✅ Ref untuk ScrollView
+  const scrollRef = useRef<ScrollView>(null);
 
-  // Data pajak (mock)
-  const taxBrackets = [
-    { min: 0, max: 5000, rate: 10 },
-    { min: 5001, max: 10000, rate: 15 },
-    { min: 10001, max: 20000, rate: 20 },
-    { min: 20001, max: "∞", rate: 25 },
-  ];
+  // ✅ useFocusEffect untuk RESET state
+  useFocusEffect(
+    useCallback(() => {
+      // Reset state tombol setiap kali layar fokus
+      setConversionRequested(false);
+      // Reset scroll ke atas
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
 
-  // Hitung total eligible dan nilai uang
-  const totalEligibleDays = leaveBalances.reduce(
-    (sum, leave) => sum + leave.eligible,
-    0
+      return () => {}; // Cleanup
+    }, [])
   );
-  const totalAmountBeforeTax = leaveBalances.reduce(
-    (sum, leave) => sum + leave.eligible * leave.rate,
-    0
-  );
-  const taxAmount = totalAmountBeforeTax * 0.15; // 15% pajak demo
-  const netAmount = totalAmountBeforeTax - taxAmount;
 
-  const handleRequestConversion = () => {
+  // ✅ Data saldo cuti (mock) - useMemo untuk performa
+  const leaveBalances: LeaveBalance[] = useMemo(
+    () => [
+      { type: "Annual", days: 15, used: 7, eligible: 8, rate: 150 },
+      { type: "Sick", days: 10, used: 2, eligible: 0, rate: 100 },
+      { type: "Special", days: 5, used: 1, eligible: 2, rate: 200 },
+    ],
+    []
+  );
+
+  // ✅ Data pajak (mock) - useMemo untuk performa
+  const taxBrackets: TaxBracket[] = useMemo(
+    () => [
+      { min: 0, max: 5000, rate: 10 },
+      { min: 5001, max: 10000, rate: 15 },
+      { min: 10001, max: 20000, rate: 20 },
+      { min: 20001, max: "∞", rate: 25 },
+    ],
+    []
+  );
+
+  // ✅ Eligibility criteria - useMemo untuk performa
+  const eligibilityCriteria = useMemo(
+    () => [
+      "Annual leave days must be unused for at least 6 months",
+      "Maximum 10 days can be converted per calendar year",
+      "Conversion requests are processed within 5 business days",
+      "Converted amounts will be added to your next paycheck",
+    ],
+    []
+  );
+
+  // ✅ Kalkulasi dengan useMemo untuk performa
+  const calculations = useMemo(() => {
+    const totalEligibleDays = leaveBalances.reduce(
+      (sum, leave) => sum + leave.eligible,
+      0
+    );
+    const totalAmountBeforeTax = leaveBalances.reduce(
+      (sum, leave) => sum + leave.eligible * leave.rate,
+      0
+    );
+    const taxAmount = totalAmountBeforeTax * 0.15; // 15% pajak demo
+    const netAmount = totalAmountBeforeTax - taxAmount;
+
+    return {
+      totalEligibleDays,
+      totalAmountBeforeTax,
+      taxAmount,
+      netAmount,
+    };
+  }, [leaveBalances]);
+
+  // ✅ Handler dengan useCallback
+  const handleRequestConversion = useCallback(() => {
     Alert.alert(
       "Leave Conversion Request",
-      `You are requesting to convert ${totalEligibleDays} days for a net amount of $${netAmount.toFixed(
+      `You are requesting to convert ${calculations.totalEligibleDays} days for a net amount of $${calculations.netAmount.toFixed(
         2
       )}. This action cannot be undone.`,
       [
@@ -60,48 +124,32 @@ export default function LeaveConversionScreen() {
           text: "Confirm",
           onPress: () => {
             setConversionRequested(true);
-            
-            // 🔥 PERBAIKAN: Gunakan replace untuk cleanup stack
-            // Setelah success, langsung ke home tanpa menumpuk stack
+
             Alert.alert(
               "Conversion Requested",
               "Your leave conversion request has been submitted successfully. You will receive a confirmation email shortly.",
               [
-                { 
-                  text: "OK", 
+                {
+                  text: "OK",
                   onPress: () => {
-                    // Replace ke home untuk membersihkan stack
-                    // Stack sebelum: [Home, Konversi]
-                    // Stack sesudah: [Home]
-                    router.replace("/home");
-                  } 
-                }
+                    router.replace("/(app)/home");
+                  },
+                },
               ]
             );
           },
         },
       ]
     );
-  };
+  }, [calculations, router]);
 
   return (
-    <View
-      className={`${
-        isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"
-      } flex-1`}
-      style={{
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-      }}
-    >
+    <View className={`${isDark ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}>
       <StatusBar style="light" />
-
+      
       {/* Header */}
       <LinearGradient
-        colors={
-          isDarkMode ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]
-        }
+        colors={isDark ? ["#1E3A8A", "#1E40AF"] : ["#3B82F6", "#60A5FA"]}
         className="px-6 pb-6 rounded-b-3xl"
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -124,44 +172,46 @@ export default function LeaveConversionScreen() {
 
       {/* Main Content */}
       <ScrollView
+        ref={scrollRef}
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
         {/* Eligible Days */}
         <View
           className={`${
-            isDarkMode ? "bg-gray-800" : "bg-white"
+            isDark ? "bg-gray-800" : "bg-white"
           } rounded-xl p-5 shadow-md mb-6`}
         >
           <View className="flex-row justify-between items-center mb-4">
             <Text
               className={`${
-                isDarkMode ? "text-white" : "text-[#1A1D23]"
+                isDark ? "text-white" : "text-[#1A1D23]"
               } text-lg font-bold`}
             >
               Eligible Days for Conversion
             </Text>
-            <Info color={isDarkMode ? "#9CA3AF" : "#6B7280"} size={20} />
+            <Info color={isDark ? "#9CA3AF" : "#6B7280"} size={20} />
           </View>
 
           <View className="flex-row flex-wrap gap-4 mb-6">
             {leaveBalances.map((leave, index) => (
               <View
-                key={index}
+                key={`${leave.type}-${index}`}
                 className={`${
-                  isDarkMode ? "bg-gray-700" : "bg-gray-100"
+                  isDark ? "bg-gray-700" : "bg-gray-100"
                 } rounded-lg p-4 flex-1 min-w-[45%]`}
               >
                 <Text
                   className={`${
-                    isDarkMode ? "text-gray-300" : "text-gray-600"
+                    isDark ? "text-gray-300" : "text-gray-600"
                   } text-sm mb-1`}
                 >
                   {leave.type} Leave
                 </Text>
                 <Text
                   className={`${
-                    isDarkMode ? "text-white" : "text-[#1A1D23]"
+                    isDark ? "text-white" : "text-[#1A1D23]"
                   } text-2xl font-bold`}
                 >
                   {leave.eligible}
@@ -173,13 +223,25 @@ export default function LeaveConversionScreen() {
             ))}
           </View>
 
-          <View className={`${isDarkMode ? "bg-blue-900" : "bg-blue-50"} rounded-xl p-4`}>
+          <View
+            className={`${
+              isDark ? "bg-blue-900/30" : "bg-blue-50"
+            } rounded-xl p-4`}
+          >
             <View className="flex-row justify-between">
-              <Text className="text-blue-800 dark:text-blue-200 font-medium">
+              <Text
+                className={`${
+                  isDark ? "text-blue-200" : "text-blue-800"
+                } font-medium`}
+              >
                 Total Eligible Days
               </Text>
-              <Text className="text-blue-800 dark:text-blue-200 font-bold text-lg">
-                {totalEligibleDays} days
+              <Text
+                className={`${
+                  isDark ? "text-blue-200" : "text-blue-800"
+                } font-bold text-lg`}
+              >
+                {calculations.totalEligibleDays} days
               </Text>
             </View>
           </View>
@@ -188,76 +250,88 @@ export default function LeaveConversionScreen() {
         {/* Monetary Value */}
         <View
           className={`${
-            isDarkMode ? "bg-gray-800" : "bg-white"
+            isDark ? "bg-gray-800" : "bg-white"
           } rounded-xl p-5 shadow-md mb-6`}
         >
           <View className="flex-row justify-between items-center mb-4">
             <Text
               className={`${
-                isDarkMode ? "text-white" : "text-[#1A1D23]"
+                isDark ? "text-white" : "text-[#1A1D23]"
               } text-lg font-bold`}
             >
               Monetary Value
             </Text>
-            <DollarSign color={isDarkMode ? "#10B981" : "#059669"} size={20} />
+            <DollarSign color={isDark ? "#10B981" : "#059669"} size={20} />
           </View>
 
           <View className="mb-4">
-            <View className="flex-row justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <Text
-                className={`${isDarkMode ? "text-gray-300" : "text-gray-600"}`}
-              >
+            <View
+              className={`flex-row justify-between py-3 border-b ${
+                isDark ? "border-gray-700" : "border-gray-200"
+              }`}
+            >
+              <Text className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
                 Gross Amount
               </Text>
               <Text
                 className={`${
-                  isDarkMode ? "text-white" : "text-[#1A1D23]"
+                  isDark ? "text-white" : "text-[#1A1D23]"
                 } font-medium`}
               >
-                ${totalAmountBeforeTax.toFixed(2)}
+                ${calculations.totalAmountBeforeTax.toFixed(2)}
               </Text>
             </View>
 
-            <View className="flex-row justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-              <Text
-                className={`${isDarkMode ? "text-gray-300" : "text-gray-600"}`}
-              >
-                Tax Deduction
+            <View
+              className={`flex-row justify-between py-3 border-b ${
+                isDark ? "border-gray-700" : "border-gray-200"
+              }`}
+            >
+              <Text className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                Tax Deduction (Demo 15%)
               </Text>
               <Text
-                className={`${
-                  isDarkMode ? "text-white" : "text-[#1A1D23]"
-                } font-medium`}
+                className={`${isDark ? "text-red-400" : "text-red-600"} font-medium`}
               >
-                -${taxAmount.toFixed(2)}
+                -${calculations.taxAmount.toFixed(2)}
               </Text>
             </View>
 
             <View className="flex-row justify-between py-3">
               <Text
-                className={`${
-                  isDarkMode ? "text-gray-300" : "text-gray-600"
-                } font-bold`}
+                className={`${isDark ? "text-white" : "text-[#1A1D23]"} font-bold`}
               >
                 Net Amount
               </Text>
               <Text
                 className={`${
-                  isDarkMode ? "text-white" : "text-[#1A1D23]"
+                  isDark ? "text-white" : "text-[#1A1D23]"
                 } font-bold text-lg`}
               >
-                ${netAmount.toFixed(2)}
+                ${calculations.netAmount.toFixed(2)}
               </Text>
             </View>
           </View>
 
-          <View className="bg-green-50 dark:bg-green-900/30 rounded-xl p-4">
+          <View
+            className={`${
+              isDark ? "bg-green-900/30" : "bg-green-50"
+            } rounded-xl p-4`}
+          >
             <View className="flex-row justify-between">
-              <Text className="text-green-800 dark:text-green-200 font-medium">
+              <Text
+                className={`${
+                  isDark ? "text-green-200" : "text-green-800"
+                } font-medium`}
+              >
                 Conversion Rate
               </Text>
-              <Text className="text-green-800 dark:text-green-200 font-bold">
-                $150 per day
+              <Text
+                className={`${
+                  isDark ? "text-green-200" : "text-green-800"
+                } font-bold`}
+              >
+                (Varies by leave type)
               </Text>
             </View>
           </View>
@@ -266,60 +340,50 @@ export default function LeaveConversionScreen() {
         {/* Tax Info */}
         <View
           className={`${
-            isDarkMode ? "bg-gray-800" : "bg-white"
+            isDark ? "bg-gray-800" : "bg-white"
           } rounded-xl p-5 shadow-md mb-6`}
         >
           <View className="flex-row justify-between items-center mb-4">
             <Text
               className={`${
-                isDarkMode ? "text-white" : "text-[#1A1D23]"
+                isDark ? "text-white" : "text-[#1A1D23]"
               } text-lg font-bold`}
             >
               Tax Information
             </Text>
-            <Calculator color={isDarkMode ? "#9CA3AF" : "#6B7280"} size={20} />
+            <Calculator color={isDark ? "#9CA3AF" : "#6B7280"} size={20} />
           </View>
 
-          <Text
-            className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} mb-4`}
-          >
+          <Text className={`${isDark ? "text-gray-300" : "text-gray-600"} mb-4`}>
             The tax deduction is calculated based on your current tax bracket.
             Unused leave days are treated as additional income.
           </Text>
 
           <Text
-            className={`${
-              isDarkMode ? "text-white" : "text-[#1A1D23]"
-            } font-medium mb-3`}
+            className={`${isDark ? "text-white" : "text-[#1A1D23]"} font-medium mb-3`}
           >
-            Your Tax Bracket: 15%
+            Your Tax Bracket: 15% (Demo)
           </Text>
 
           <View
-            className={`${
-              isDarkMode ? "bg-gray-700" : "bg-gray-100"
-            } rounded-lg p-4`}
+            className={`${isDark ? "bg-gray-700" : "bg-gray-100"} rounded-lg p-4`}
           >
             <Text
               className={`${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
+                isDark ? "text-gray-300" : "text-gray-600"
               } text-sm mb-2`}
             >
               Current Tax Brackets
             </Text>
             {taxBrackets.map((bracket, index) => (
-              <View key={index} className="flex-row justify-between py-2">
+              <View key={`tax-${index}`} className="flex-row justify-between py-2">
                 <Text
-                  className={`${
-                    isDarkMode ? "text-gray-400" : "text-gray-500"
-                  } text-sm`}
+                  className={`${isDark ? "text-gray-400" : "text-gray-500"} text-sm`}
                 >
-                  ${bracket.min} - {bracket.max}
+                  ${bracket.min} - ${bracket.max}
                 </Text>
                 <Text
-                  className={`${
-                    isDarkMode ? "text-gray-400" : "text-gray-500"
-                  } text-sm`}
+                  className={`${isDark ? "text-gray-400" : "text-gray-500"} text-sm`}
                 >
                   {bracket.rate}%
                 </Text>
@@ -331,33 +395,26 @@ export default function LeaveConversionScreen() {
         {/* Eligibility */}
         <View
           className={`${
-            isDarkMode ? "bg-gray-800" : "bg-white"
+            isDark ? "bg-gray-800" : "bg-white"
           } rounded-xl p-5 shadow-md mb-6`}
         >
           <Text
-            className={`${
-              isDarkMode ? "text-white" : "text-[#1A1D23]"
-            } text-lg font-bold mb-4`}
+            className={`${isDark ? "text-white" : "text-[#1A1D23]"} text-lg font-bold mb-4`}
           >
             Eligibility Criteria
           </Text>
 
           <View className="space-y-3">
-            {[
-              "Annual leave days must be unused for at least 6 months",
-              "Maximum 10 days can be converted per calendar year",
-              "Conversion requests are processed within 5 business days",
-              "Converted amounts will be added to your next paycheck",
-            ].map((text, i) => (
-              <View key={i} className="flex-row items-start mb-3">
+            {eligibilityCriteria.map((text, i) => (
+              <View key={`criteria-${i}`} className="flex-row items-start mb-3">
                 <CheckCircle
-                  color={isDarkMode ? "#10B981" : "#059669"}
+                  color={isDark ? "#10B981" : "#059669"}
                   size={20}
-                  style={{ marginTop: 2}}
+                  style={{ marginTop: 2 }}
                 />
                 <Text
                   className={`${
-                    isDarkMode ? "text-gray-300" : "text-gray-600"
+                    isDark ? "text-gray-300" : "text-gray-600"
                   } ml-3 flex-1`}
                 >
                   {text}
@@ -374,11 +431,10 @@ export default function LeaveConversionScreen() {
           } shadow-md`}
           onPress={handleRequestConversion}
           disabled={conversionRequested}
+          activeOpacity={0.7} // ✅ Feedback visual
         >
           <Text className="text-white text-center font-bold text-lg">
-            {conversionRequested
-              ? "Conversion Requested"
-              : "Request Conversion"}
+            {conversionRequested ? "Conversion Requested" : "Request Conversion"}
           </Text>
         </TouchableOpacity>
       </ScrollView>

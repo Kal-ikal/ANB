@@ -1,3 +1,4 @@
+//app/(app)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { Home, FileText, User, Settings } from 'lucide-react-native';
