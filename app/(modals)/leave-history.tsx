@@ -5,13 +5,18 @@ import {
   TouchableOpacity,
   StatusBar,
 } from "react-native";
-import { ArrowLeft, Calendar, CheckCircle, XCircle, Clock } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
 import { JSX } from "react/jsx-runtime";
 import { useState } from "react";
 
-// Type definitions
 interface LeaveItem {
   id: number;
   type: string;
@@ -70,7 +75,7 @@ export default function LeaveHistoryScreen() {
     },
   ]);
 
-  const getStatusColor = (status: string): string => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
         return "bg-green-500";
@@ -106,7 +111,6 @@ export default function LeaveHistoryScreen() {
       <StatusBar barStyle="light-content" />
       <BlurView intensity={50} className="flex-1">
         <View className="flex-1 bg-white/80 dark:bg-gray-900/80">
-          {/* Header */}
           <View className="flex-row items-center p-6 pt-12 border-b border-gray-200 dark:border-gray-800">
             <TouchableOpacity onPress={() => router.back()} className="mr-4">
               <ArrowLeft color="#6B7280" size={24} />
@@ -116,7 +120,7 @@ export default function LeaveHistoryScreen() {
             </Text>
           </View>
 
-          {/* Filter Tabs */}
+          {/* Filters */}
           <View className="px-6 py-4">
             <ScrollView
               horizontal
@@ -149,8 +153,8 @@ export default function LeaveHistoryScreen() {
             </ScrollView>
           </View>
 
-          {/* Leave History List */}
-          <ScrollView 
+          {/* List */}
+          <ScrollView
             className="flex-1 px-6"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 24 }}
@@ -178,6 +182,8 @@ export default function LeaveHistoryScreen() {
                         {leave.startDate} to {leave.endDate}
                       </Text>
                     </View>
+
+                    {/* ⚡ FIX: SAFE status color */}
                     <View
                       className={`${getStatusColor(
                         leave.status

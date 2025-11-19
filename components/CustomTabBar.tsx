@@ -2,7 +2,7 @@ import { View, TouchableOpacity, Platform } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Animated, {
   FadeIn,
@@ -51,21 +51,16 @@ export default function CustomTabBar() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Determine active tab from pathname
+  // Determine active tab name
   const getActiveTab = () => {
-    if (pathname === "/home" || pathname === "/" || pathname === "/(app)") {
-      return "home";
-    }
-    
-    // Remove leading slash and get the route name
+    // Normalize pathname, remove casting from expo-router
     const cleanPath = pathname.replace(/^\//, "").split("/")[0];
-    
-    // Check if it matches any tab
-    const matchedTab = tabs.find(tab => 
-      pathname.includes(tab.name) || cleanPath === tab.name
-    );
-    
-    return matchedTab?.name || "home";
+
+    // Handle root route
+    if (cleanPath === "" || cleanPath === "(app)") return "home";
+
+    const matchedTab = tabs.find((tab) => cleanPath === tab.name);
+    return matchedTab ? matchedTab.name : "home";
   };
 
   const activeTab = getActiveTab();
