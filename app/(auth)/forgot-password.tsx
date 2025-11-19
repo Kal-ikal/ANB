@@ -58,7 +58,7 @@ export default function ForgotPasswordScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-1 justify-center max-w-md mx-auto w-full">
-          {/* 🧩 Header */}
+          {/* Header */}
           <View className="mb-12">
             <Text className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-2">
               Reset Password
@@ -68,7 +68,7 @@ export default function ForgotPasswordScreen() {
             </Text>
           </View>
 
-          {/* 🧩 Form atau pesan sukses */}
+          {/* Form atau pesan sukses */}
           {!isSuccess ? (
             <View className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
               <View className="mb-6">
@@ -76,18 +76,16 @@ export default function ForgotPasswordScreen() {
                   Email Address
                 </Text>
 
-                {/* 🧩 Wrapper Input */}
+                {/* Wrapper Input */}
                 <View
                   className="flex-row items-center border rounded-lg px-3"
                   style={{
-                    borderColor: error ? "#ef4444" : "#d1d5db", // merah saat error
-                    backgroundColor: "#1f2937", // dark:bg-gray-800
+                    borderColor: error ? "#ef4444" : "#d1d5db",
+                    backgroundColor: "#1f2937",
                   }}
                 >
-                  {/* 🧩 Ikon Mail, tidak absolute lagi */}
                   <Mail size={20} color="#94a3b8" style={{ marginRight: 8 }} />
 
-                  {/* 🧩 Input email */}
                   <TextInput
                     className="flex-1 py-3 text-base text-gray-900 dark:text-white"
                     placeholder="Enter your email"
@@ -105,7 +103,7 @@ export default function ForgotPasswordScreen() {
                 ) : null}
               </View>
 
-              {/* 🧩 Tombol kirim */}
+              {/* Tombol kirim */}
               <TouchableOpacity
                 className={`py-3.5 rounded-xl items-center justify-center mb-4 ${
                   isLoading
@@ -132,7 +130,6 @@ export default function ForgotPasswordScreen() {
               </View>
             </View>
           ) : (
-            // 🧩 Tampilan sukses
             <View className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 items-center space-y-4">
               <View className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
                 <Text className="text-green-600 dark:text-green-400 text-3xl">✓</Text>
@@ -152,13 +149,11 @@ export default function ForgotPasswordScreen() {
             </View>
           )}
 
-          {/* 🧩 Footer */}
+          {/* Footer */}
           <View className="mt-8">
             <Text className="text-gray-500 dark:text-gray-400 text-center text-sm">
-              Didn&apos;t receive the email? Check your spam folder or{"\n"}
-              <Text className="text-blue-600 dark:text-blue-400">
-                contact support
-              </Text>
+              Didn&apos;t receive the email? Check your spam folder or{'\n'}
+              <Text className="text-blue-600 dark:text-blue-400">contact support</Text>
             </Text>
           </View>
         </View>

@@ -75,7 +75,7 @@ export default function LeaveConversionScreen() {
       { min: 0, max: 5000, rate: 10 },
       { min: 5001, max: 10000, rate: 15 },
       { min: 10001, max: 20000, rate: 20 },
-      { min: 20001, max: "∞", rate: 25 },
+      { min: 20001, max: "Infinity", rate: 25 },
     ],
     []
   );
@@ -381,7 +381,7 @@ export default function LeaveConversionScreen() {
                 <Text
                   className={`${isDark ? "text-gray-400" : "text-gray-500"} text-sm`}
                 >
-                  ${bracket.min} - ${bracket.max}
+                  {'$${bracket.min} - $${bracket.max}'}
                 </Text>
                 <Text
                   className={`${isDark ? "text-gray-400" : "text-gray-500"} text-sm`}

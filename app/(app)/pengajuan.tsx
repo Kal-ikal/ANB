@@ -236,7 +236,7 @@ export default function LeaveApplicationForm() {
   }, [currentStep, formData.leaveType, formData.startDate, formData.endDate, formData.reason]);
 
   const formatDate = useCallback((dateString: string): string => {
-    if (!dateString) return "";
+    if (!dateString) return "" as string;
     const d = new Date(dateString);
     return d.toLocaleDateString("en-US", {
       year: "numeric",

@@ -425,12 +425,9 @@ export default function DashboardScreen() {
                 <Text
                   className={`${
                     isDarkMode ? "text-white" : "text-[#1A1D23]"
-                  } font-medium`}
-                >
-                  Annual Leave
-                </Text>
+                  } font-medium`}>Annual Leave</Text>
                 <Text className="text-gray-500 text-sm">
-                  15–20 Dec 2023 • 6 days
+                  {'15–20 Dec 2023 • 6 days'}
                 </Text>
               </View>
             </View>
@@ -445,7 +442,7 @@ export default function DashboardScreen() {
                 >
                   Sick Leave
                 </Text>
-                <Text className="text-gray-500 text-sm">05 Jan 2024 • 2 days</Text>
+                <Text className="text-gray-500 text-sm">{'05 Jan 2024 • 2 days'}</Text>
               </View>
             </View>
           </View>

@@ -57,7 +57,7 @@ export default function CustomTabBar() {
     const cleanPath = pathname.replace(/^\//, "").split("/")[0];
 
     // Handle root route
-    if (cleanPath === "" || cleanPath === "(app)") return "home";
+    if (cleanPath === "" || cleanPath === "(app)") return "home" as const;
 
     const matchedTab = tabs.find((tab) => cleanPath === tab.name);
     return matchedTab ? matchedTab.name : "home";

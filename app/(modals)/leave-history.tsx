@@ -14,8 +14,8 @@ import {
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
-import { JSX } from "react/jsx-runtime";
-import { useState } from "react";
+import { JSX, useMemo,useState } from "react";
+
 
 interface LeaveItem {
   id: number;
@@ -75,18 +75,33 @@ export default function LeaveHistoryScreen() {
     },
   ]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-500";
-      case "Rejected":
-        return "bg-red-500";
-      case "Pending":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
+  // ✅ FIX: Pisahkan logic ke helper function
+  const getStatusStyles = useMemo(() => {
+    return (status: string) => {
+      switch (status) {
+        case "Approved":
+          return {
+            bg: "bg-green-500",
+            text: "text-white",
+          };
+        case "Rejected":
+          return {
+            bg: "bg-red-500",
+            text: "text-white",
+          };
+        case "Pending":
+          return {
+            bg: "bg-orange-500",
+            text: "text-white",
+          };
+        default:
+          return {
+            bg: "bg-gray-500",
+            text: "text-white",
+          };
+      }
+    };
+  }, []);
 
   const getStatusIcon = (status: string): JSX.Element => {
     switch (status) {
@@ -167,44 +182,44 @@ export default function LeaveHistoryScreen() {
                 </Text>
               </View>
             ) : (
-              filteredHistory.map((leave) => (
-                <TouchableOpacity
-                  key={leave.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm border border-gray-100 dark:border-gray-700"
-                  activeOpacity={0.7}
-                >
-                  <View className="flex-row justify-between items-start mb-3">
-                    <View className="flex-1">
-                      <Text className="text-lg font-bold text-gray-900 dark:text-white">
-                        {leave.type}
-                      </Text>
-                      <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {leave.startDate} to {leave.endDate}
-                      </Text>
+              filteredHistory.map((leave) => {
+                const statusStyles = getStatusStyles(leave.status);
+                
+                return (
+                  <TouchableOpacity
+                    key={leave.id}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm border border-gray-100 dark:border-gray-700"
+                    activeOpacity={0.7}
+                  >
+                    <View className="flex-row justify-between items-start mb-3">
+                      <View className="flex-1">
+                        <Text className="text-lg font-bold text-gray-900 dark:text-white">
+                          {leave.type}
+                        </Text>
+                        <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          {leave.startDate} to {leave.endDate}
+                        </Text>
+                      </View>
+
+                      {/* ✅ FIX: Pisahkan className jadi variable */}
+                      <View className={`${statusStyles.bg} px-3 py-1 rounded-full`}>
+                        <Text className={`${statusStyles.text} text-xs font-medium`}>
+                          {leave.status}
+                        </Text>
+                      </View>
                     </View>
 
-                    {/* ⚡ FIX: SAFE status color */}
-                    <View
-                      className={`${getStatusColor(
-                        leave.status
-                      )} px-3 py-1 rounded-full`}
-                    >
-                      <Text className="text-white text-xs font-medium">
-                        {leave.status}
-                      </Text>
+                    <View className="flex-row items-center pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <View className="flex-row items-center flex-1">
+                        {getStatusIcon(leave.status)}
+                        <Text className="text-gray-600 dark:text-gray-300 ml-2">
+                          Duration: {leave.duration}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-
-                  <View className="flex-row items-center pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <View className="flex-row items-center flex-1">
-                      {getStatusIcon(leave.status)}
-                      <Text className="text-gray-600 dark:text-gray-300 ml-2">
-                        Duration: {leave.duration}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))
+                  </TouchableOpacity>
+                );
+              })
             )}
           </ScrollView>
         </View>

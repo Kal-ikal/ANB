@@ -205,7 +205,7 @@ export default function LoginScreen() {
                     autoCorrect={false}
                   />
                 </View>
-                {errors.email && <Text className="text-red-500 text-sm mt-1">{errors.email}</Text>}
+                {!!errors.email && <Text className="text-red-500 text-sm mt-1">{errors.email}</Text>}
               </View>
 
               {/* Password */}
@@ -255,9 +255,9 @@ export default function LoginScreen() {
                     </Animated.View>
                   </TouchableOpacity>
                 </View>
-                {errors.password && (
-                  <Text className="text-red-500 text-sm mt-1">{errors.password}</Text>
-                )}
+                {!!errors.password && (
+                <Text className="text-red-500 text-sm mt-1">{errors.password}</Text>
+              )}
               </View>
 
               {/* Forgot Password */}

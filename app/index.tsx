@@ -109,8 +109,6 @@ const LandingScreen: React.FC = () => {
           />
         }
       >
-        {/* Rest of the code remains the same... */}
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <Text style={styles.logo}>
@@ -254,9 +252,7 @@ const LandingScreen: React.FC = () => {
         </View>
         
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © 2025 Annual & Benefit. All rights reserved.
-          </Text>
+          <Text style={styles.footerText}>© 2025 Annual & Benefit. All rights reserved.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
