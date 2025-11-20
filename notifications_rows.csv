@@ -1,0 +1,42 @@
+id,user_id,message,is_read,created_at,link_to
+185,3acb764d-d05a-4673-8ea9-1c545357fb02,ucup telah mengajukan cuti baru.,true,2025-10-23 08:33:32.575364+00,/(admin)/cuti
+186,3acb764d-d05a-4673-8ea9-1c545357fb02,admin telah mengajukan cuti baru.,true,2025-10-23 08:33:59.054212+00,/(admin)/cuti
+189,3acb764d-d05a-4673-8ea9-1c545357fb02,Status pengajuan cuti Anda telah diubah menjadi Disetujui,true,2025-10-23 08:34:10.158526+00,/(karyawan)/cuti-saya
+190,3acb764d-d05a-4673-8ea9-1c545357fb02,Pengajuan cuti Anda telah disetujui oleh admin.,true,2025-10-23 08:34:10.158526+00,/(employee)/cuti
+199,3acb764d-d05a-4673-8ea9-1c545357fb02,admin telah mengajukan cuti baru.,true,2025-10-23 09:11:18.245637+00,/(admin)/cuti
+200,3acb764d-d05a-4673-8ea9-1c545357fb02,Status pengajuan cuti Anda telah diubah menjadi Disetujui,true,2025-10-23 09:11:20.507968+00,/(karyawan)/cuti-saya
+201,3acb764d-d05a-4673-8ea9-1c545357fb02,Pengajuan cuti Anda telah disetujui oleh admin.,true,2025-10-23 09:11:20.507968+00,/(employee)/cuti
+238,3acb764d-d05a-4673-8ea9-1c545357fb02,admin telah mengajukan cuti baru.,true,2025-10-27 04:57:49.283747+00,/(admin)/cuti
+239,3acb764d-d05a-4673-8ea9-1c545357fb02,Status pengajuan cuti Anda telah diubah menjadi Disetujui,true,2025-10-27 04:57:55.49013+00,/(karyawan)/cuti-saya
+240,3acb764d-d05a-4673-8ea9-1c545357fb02,Pengajuan cuti Anda telah disetujui oleh admin.,true,2025-10-27 04:57:55.49013+00,/(employee)/cuti
+243,3acb764d-d05a-4673-8ea9-1c545357fb02,ucup telah mengajukan cuti baru.,true,2025-10-27 05:29:23.21727+00,/(admin)/cuti
+246,3acb764d-d05a-4673-8ea9-1c545357fb02,habib telah mengajukan cuti baru.,true,2025-10-30 06:38:24.642065+00,/(admin)/cuti
+255,3acb764d-d05a-4673-8ea9-1c545357fb02,admin telah mengajukan cuti baru.,true,2025-10-30 06:39:01.662116+00,/(admin)/cuti
+264,3acb764d-d05a-4673-8ea9-1c545357fb02,Status pengajuan cuti Anda telah diubah menjadi Disetujui,true,2025-10-30 06:45:55.387146+00,/(karyawan)/cuti-saya
+265,3acb764d-d05a-4673-8ea9-1c545357fb02,Pengajuan cuti Anda telah disetujui oleh admin.,true,2025-10-30 06:45:55.387146+00,/(employee)/cuti
+266,3acb764d-d05a-4673-8ea9-1c545357fb02,admin telah mengajukan cuti baru.,true,2025-11-03 03:25:01.744139+00,/(admin)/cuti
+267,3acb764d-d05a-4673-8ea9-1c545357fb02,admin telah mengajukan cuti baru.,true,2025-11-03 03:28:58.953026+00,/(admin)/cuti
+268,3acb764d-d05a-4673-8ea9-1c545357fb02,Status pengajuan cuti Anda telah diubah menjadi Disetujui,true,2025-11-03 04:35:44.317699+00,/(karyawan)/cuti-saya
+269,3acb764d-d05a-4673-8ea9-1c545357fb02,Pengajuan cuti Anda telah disetujui oleh admin.,true,2025-11-03 04:35:44.317699+00,/(employee)/cuti
+270,3acb764d-d05a-4673-8ea9-1c545357fb02,tahap3 telah mengajukan cuti baru.,true,2025-11-03 04:36:11.466195+00,/(admin)/cuti
+271,3acb764d-d05a-4673-8ea9-1c545357fb02,habib telah mengajukan cuti baru.,true,2025-11-03 04:54:08.568952+00,/(admin)/cuti
+276,3acb764d-d05a-4673-8ea9-1c545357fb02,ikal telah mengajukan cuti baru.,true,2025-11-03 07:04:27.986083+00,/(admin)/cuti
+277,3acb764d-d05a-4673-8ea9-1c545357fb02,uhuy telah mengajukan cuti baru.,true,2025-11-03 07:04:42.341802+00,/(admin)/cuti
+278,a91aad6d-cf5d-467c-8911-6efae77ae24b,Status pengajuan cuti Anda telah diubah menjadi Disetujui,false,2025-11-03 07:12:02.68748+00,/(karyawan)/cuti-saya
+279,a91aad6d-cf5d-467c-8911-6efae77ae24b,Pengajuan cuti Anda telah disetujui oleh admin.,false,2025-11-03 07:12:02.68748+00,/(employee)/cuti
+280,88d6b3ca-82e7-46cb-96c4-8c9555aa947b,Status pengajuan cuti Anda telah diubah menjadi Disetujui,false,2025-11-03 07:12:19.300388+00,/(karyawan)/cuti-saya
+281,88d6b3ca-82e7-46cb-96c4-8c9555aa947b,Pengajuan cuti Anda telah disetujui oleh admin.,false,2025-11-03 07:12:19.300388+00,/(employee)/cuti
+282,3acb764d-d05a-4673-8ea9-1c545357fb02,habib telah mengajukan cuti baru.,true,2025-11-07 04:20:01.058115+00,/(admin)/cuti
+283,3acb764d-d05a-4673-8ea9-1c545357fb02,uhuy telah mengajukan cuti baru.,true,2025-11-07 04:20:19.508401+00,/(admin)/cuti
+284,3acb764d-d05a-4673-8ea9-1c545357fb02,ikal telah mengajukan cuti baru.,true,2025-11-07 04:20:52.54589+00,/(admin)/cuti
+285,461560c1-75c0-48b4-b864-f3c22fb5e9a2,Status pengajuan cuti Anda telah diubah menjadi Disetujui,true,2025-11-10 01:55:32.416014+00,/(karyawan)/cuti-saya
+286,461560c1-75c0-48b4-b864-f3c22fb5e9a2,Pengajuan cuti Anda telah disetujui oleh admin.,true,2025-11-10 01:55:32.416014+00,/(employee)/cuti
+287,c5383438-0851-4ceb-93dc-aa25ca19fa75,Status pengajuan cuti Anda telah diubah menjadi Disetujui,true,2025-11-10 01:55:38.768758+00,/(karyawan)/cuti-saya
+288,c5383438-0851-4ceb-93dc-aa25ca19fa75,Pengajuan cuti Anda telah disetujui oleh admin.,true,2025-11-10 01:55:38.768758+00,/(employee)/cuti
+289,461560c1-75c0-48b4-b864-f3c22fb5e9a2,Status pengajuan cuti Anda telah diubah menjadi Ditolak,true,2025-11-10 02:18:02.623149+00,/(karyawan)/cuti-saya
+290,461560c1-75c0-48b4-b864-f3c22fb5e9a2,Pengajuan cuti Anda telah ditolak oleh admin.,true,2025-11-10 02:18:02.623149+00,/(employee)/cuti
+291,c5383438-0851-4ceb-93dc-aa25ca19fa75,Status pengajuan cuti Anda telah diubah menjadi Disetujui,false,2025-11-10 02:20:31.232869+00,/(karyawan)/cuti-saya
+292,c5383438-0851-4ceb-93dc-aa25ca19fa75,Pengajuan cuti Anda telah disetujui oleh admin.,false,2025-11-10 02:20:31.232869+00,/(employee)/cuti
+293,88d6b3ca-82e7-46cb-96c4-8c9555aa947b,Status pengajuan cuti Anda telah diubah menjadi Disetujui,false,2025-11-10 02:20:35.876386+00,/(karyawan)/cuti-saya
+294,88d6b3ca-82e7-46cb-96c4-8c9555aa947b,Pengajuan cuti Anda telah disetujui oleh admin.,false,2025-11-10 02:20:35.876386+00,/(employee)/cuti
+295,3acb764d-d05a-4673-8ea9-1c545357fb02,ikal telah mengajukan cuti baru.,false,2025-11-10 09:05:24.811457+00,/(admin)/cuti

@@ -1,0 +1,9 @@
+id,full_name,email,position,department,avatar_url,created_at,user_id,join_date,role,phone_number,salary,updated_at
+0c07fe70-137d-4cce-8a10-6d19c50e55b0,habib,habib@gmail.com,Frontend Developer,Engineering,,2025-10-30 03:46:36.826165+00,88d6b3ca-82e7-46cb-96c4-8c9555aa947b,2015-10-30,dfd_lead,,5000000,2025-11-18 04:43:47.18909+00
+1bfc6d11-38a7-4c2b-a2f2-6e09006bd115,admin,admin@gmail.com,Manager SDM,SDM,,2025-10-23 08:30:08.469621+00,3acb764d-d05a-4673-8ea9-1c545357fb02,2025-10-23,admin,,5000000,2025-11-18 04:43:47.18909+00
+1c4a137e-cfc3-46d4-a75a-5101efbb2b95,uhuy,uhuy@gmail.com,HR Manager,Design,,2025-11-03 03:30:36.575066+00,c5383438-0851-4ceb-93dc-aa25ca19fa75,2020-11-03,head_dept,,5000000,2025-11-18 04:43:47.18909+00
+235c6ac5-ea42-4223-9830-7440df341ef2,test10,test10@gmail.com,Backend Developer,Engineering,,2025-11-18 04:54:50.255137+00,a88ad016-c302-4d7e-be09-e7699a5420bf,,karyawan,,0,2025-11-18 04:54:50.255137+00
+69c2eb6a-e5d9-444a-a9f8-602c9a5cfd85,ang,ang@gmail.com,Content Creator,Engineering,,2025-11-03 03:31:49.610721+00,15f317da-5b3c-4b24-ad0b-4f9774176f6e,2023-11-14,hrd,,5000000,2025-11-18 04:43:47.18909+00
+81e28743-2d97-4b98-8f48-287b1c2128cb,test1,test1@gmail.com,Frontend Developer,Engineering,,2025-11-18 05:02:34.510657+00,17431edd-fc92-46fa-badf-85595d955393,2015-07-18,karyawan,+6285788011026,0,2025-11-18 05:02:34.510657+00
+871b697b-deb5-4cf9-a482-280fb76107a5,tahap3,tahap@gmail.com,Fullstack Developer,Product,,2025-11-03 03:31:11.349917+00,a91aad6d-cf5d-467c-8911-6efae77ae24b,2010-11-03,karyawan,,5000000,2025-11-18 04:43:47.18909+00
+8a29eba6-8e38-47c1-bd85-00e5b1db98fe,ikal,ikal@gmail.com,HR Manager,HR,,2025-10-30 02:09:04.955588+00,461560c1-75c0-48b4-b864-f3c22fb5e9a2,2018-10-30,manager,,5000000,2025-11-18 04:43:47.18909+00
