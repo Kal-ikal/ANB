@@ -1,32 +1,19 @@
-// lib/supabase.ts
-import 'react-native-url-polyfill/auto'; // Wajib untuk Supabase di React Native
-import * as SecureStore from 'expo-secure-store';
-import { createClient } from '@supabase/supabase-js';
-import { Platform } from 'react-native';
+import 'react-native-url-polyfill/auto'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createClient } from '@supabase/supabase-js'
 
-// Adapter untuk SecureStore agar Supabase bisa menyimpan session
-const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => {
-    return SecureStore.getItemAsync(key);
-  },
-  setItem: (key: string, value: string) => {
-    SecureStore.setItemAsync(key, value);
-  },
-  removeItem: (key: string) => {
-    SecureStore.deleteItemAsync(key);
-  },
-};
+// Placeholder values to prevent crash if env vars are missing in this environment
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_KEY || 'placeholder';
 
-// Placeholder URLs
-const supabaseUrl = 'https://placeholder.supabase.co';
-const supabaseAnonKey = 'placeholder';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    // Gunakan SecureStore hanya jika BUKAN web
-    storage: Platform.OS === 'web' ? undefined : ExpoSecureStoreAdapter,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+export const supabase = createClient(
+  supabaseUrl,
+  supabaseAnonKey,
+  {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  })
