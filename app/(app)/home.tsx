@@ -26,6 +26,7 @@ import { Link, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
+import { supabase } from "@/lib/supabase";
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -40,11 +41,55 @@ type QuickAction = {
   useLink: boolean;
 };
 
+type LeaveBalance = {
+  type: string;
+  days: number;
+  used: number;
+  color: string;
+};
+
+type ChartData = {
+  value: number;
+  label: string;
+};
+
+type UpcomingLeave = {
+  id: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  color: string;
+  dateString: string;
+};
+
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { isDarkMode, toggleTheme } = useTheme();
   const [switchReady, setSwitchReady] = useState(false);
   const router = useRouter();
+
+  // State for dynamic data
+  const [userName, setUserName] = useState("User");
+  const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([
+    { type: "Annual", days: 12, used: 0, color: "#3B82F6" },
+    { type: "Sick", days: 10, used: 0, color: "#10B981" },
+    { type: "Special", days: 5, used: 0, color: "#8B5CF6" },
+  ]);
+  const [monthlyUsageData, setMonthlyUsageData] = useState<ChartData[]>([
+      { value: 0, label: "Jan" },
+      { value: 0, label: "Feb" },
+      { value: 0, label: "Mar" },
+      { value: 0, label: "Apr" },
+      { value: 0, label: "May" },
+      { value: 0, label: "Jun" },
+  ]);
+  const [yearlyUsageData, setYearlyUsageData] = useState<ChartData[]>([
+    { value: 0, label: "Annual" },
+    { value: 0, label: "Sick" },
+    { value: 0, label: "Special" },
+  ]);
+  const [upcomingLeaves, setUpcomingLeaves] = useState<UpcomingLeave[]>([]);
 
   // PREFETCH
   useEffect(() => {
@@ -64,6 +109,7 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       const t = setTimeout(() => setSwitchReady(true), 50);
+      fetchDashboardData();
       return () => {
         setSwitchReady(false);
         clearTimeout(t);
@@ -71,26 +117,149 @@ export default function DashboardScreen() {
     }, [])
   );
 
-  const leaveBalances = [
-    { type: "Annual", days: 15, used: 7, color: "#3B82F6" },
-    { type: "Sick", days: 10, used: 2, color: "#10B981" },
-    { type: "Special", days: 5, used: 1, color: "#8B5CF6" },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-  const monthlyUsageData = [
-    { value: 2, label: "Jan" },
-    { value: 3, label: "Feb" },
-    { value: 1, label: "Mar" },
-    { value: 4, label: "Apr" },
-    { value: 2, label: "May" },
-    { value: 5, label: "Jun" },
-  ];
+      if (!user) return;
 
-  const yearlyUsageData = [
-    { value: 10, label: "Annual" },
-    { value: 2, label: "Sick" },
-    { value: 1, label: "Special" },
-  ];
+      // Fetch Employee Data
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (employee) {
+        setUserName(employee.full_name || "User");
+      }
+
+      const employeeId = employee?.id;
+
+      if (employeeId) {
+        // Fetch Leave Requests
+        const { data: requests } = await supabase
+          .from('leave_requests')
+          .select('*')
+          .eq('employee_id', employeeId);
+
+        // Fetch Allocation (Improvisation: assuming leave_balances has total_allocation for Annual)
+        const { data: balanceData } = await supabase
+          .from('leave_balances')
+          .select('total_allocation')
+          .eq('employee_id', employeeId)
+          .single();
+
+        const annualAllocation = balanceData?.total_allocation || 12;
+        const sickAllocation = 10; // Default
+        const specialAllocation = 5; // Default
+
+        let annualUsed = 0;
+        let sickUsed = 0;
+        let specialUsed = 0;
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthlyMap = new Map<string, number>();
+        months.forEach(m => monthlyMap.set(m, 0));
+
+        const currentYear = new Date().getFullYear();
+        const upcoming: UpcomingLeave[] = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (requests) {
+          requests.forEach((req: any) => {
+            const startDate = new Date(req.start_date);
+            const endDate = new Date(req.end_date);
+
+            // Calculate duration
+            const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+            const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+            // Only count Approved leaves for usage
+            if (req.status === 'Disetujui') {
+              if (startDate.getFullYear() === currentYear) {
+                 const monthName = months[startDate.getMonth()];
+                 monthlyMap.set(monthName, (monthlyMap.get(monthName) || 0) + days);
+              }
+
+              // Map DB types to UI types
+              // Assuming DB uses Indonesian 'Cuti Tahunan', etc.
+              const typeLower = req.leave_type.toLowerCase();
+              if (typeLower.includes('tahunan') || typeLower.includes('annual')) {
+                 annualUsed += days;
+              } else if (typeLower.includes('sakit') || typeLower.includes('sick')) {
+                 sickUsed += days;
+              } else {
+                 specialUsed += days;
+              }
+            }
+
+            // Upcoming Leaves (Approved)
+            if (req.status === 'Disetujui' && startDate > today) {
+               let color = "#3B82F6"; // Annual default
+               let displayType = "Annual Leave";
+
+               const typeLower = req.leave_type.toLowerCase();
+               if (typeLower.includes('sakit') || typeLower.includes('sick')) {
+                 color = "#10B981";
+                 displayType = "Sick Leave";
+               } else if (!typeLower.includes('tahunan') && !typeLower.includes('annual')) {
+                 color = "#8B5CF6";
+                 displayType = req.leave_type;
+               }
+
+               const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+               const startStr = startDate.toLocaleDateString('en-GB', options);
+               const endStr = endDate.toLocaleDateString('en-GB', options);
+
+               // Determine date string format (single day vs range)
+               const dateString = days > 1 ? `${startStr} - ${endStr} • ${days} days` : `${startStr} • 1 day`;
+
+               upcoming.push({
+                 id: req.id,
+                 type: displayType,
+                 startDate: req.start_date,
+                 endDate: req.end_date,
+                 days,
+                 color,
+                 dateString
+               });
+            }
+          });
+        }
+
+        // Update State
+        setLeaveBalances([
+          { type: "Annual", days: annualAllocation, used: annualUsed, color: "#3B82F6" },
+          { type: "Sick", days: sickAllocation, used: sickUsed, color: "#10B981" },
+          { type: "Special", days: specialAllocation, used: specialUsed, color: "#8B5CF6" },
+        ]);
+
+        // Prepare Monthly Data (show first 6 months or dynamic?)
+        // Keeping UI style: 6 bars. Let's show current month + previous 5, or Jan-Jun if early in year.
+        // Actually let's just map the first 6 months for now to match the UI look
+        const mData = months.slice(0, 6).map(m => ({
+           value: monthlyMap.get(m) || 0,
+           label: m
+        }));
+        setMonthlyUsageData(mData);
+
+        setYearlyUsageData([
+           { value: annualUsed, label: "Annual" },
+           { value: sickUsed, label: "Sick" },
+           { value: specialUsed, label: "Special" }
+        ]);
+
+        // Sort upcoming by date
+        upcoming.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+        setUpcomingLeaves(upcoming.slice(0, 3)); // Limit to 3
+      }
+
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    }
+  };
 
   const quickActions: QuickAction[] = [
     {
@@ -150,7 +319,7 @@ export default function DashboardScreen() {
               Annual & Benefit | User
             </Text>
             <Text className="text-blue-100 text-sm mt-1">
-              Welcome back, Sarah!
+              Welcome back, {userName}!
             </Text>
           </View>
 
@@ -223,7 +392,7 @@ export default function DashboardScreen() {
                       <View
                         className="h-full rounded-full"
                         style={{
-                          width: `${(leave.used / leave.days) * 100}%`,
+                          width: `${(leave.used / Math.max(leave.days, 1)) * 100}%`,
                           backgroundColor: leave.color,
                         }}
                       />
@@ -419,32 +588,28 @@ export default function DashboardScreen() {
               <Calendar color={isDarkMode ? "#9CA3AF" : "#6B7280"} size={20} />
             </View>
 
-            <View className="flex-row items-center mb-3">
-              <View className="bg-blue-500 w-3 h-3 rounded-full mr-3" />
-              <View>
-                <Text
-                  className={`${
-                    isDarkMode ? "text-white" : "text-[#1A1D23]"
-                  } font-medium`}>Annual Leave</Text>
-                <Text className="text-gray-500 text-sm">
-                  {'15–20 Dec 2023 • 6 days'}
-                </Text>
-              </View>
-            </View>
+            {upcomingLeaves.length > 0 ? (
+              upcomingLeaves.map((leave, index) => (
+                <View key={leave.id} className={`flex-row items-center ${index < upcomingLeaves.length - 1 ? 'mb-3' : ''}`}>
+                  <View className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: leave.color }} />
+                  <View>
+                    <Text
+                      className={`${
+                        isDarkMode ? "text-white" : "text-[#1A1D23]"
+                      } font-medium`}
+                    >
+                      {leave.type}
+                    </Text>
+                    <Text className="text-gray-500 text-sm">
+                      {leave.dateString}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text className="text-gray-500 text-sm italic">No upcoming leaves</Text>
+            )}
 
-            <View className="flex-row items-center">
-              <View className="bg-green-500 w-3 h-3 rounded-full mr-3" />
-              <View>
-                <Text
-                  className={`${
-                    isDarkMode ? "text-white" : "text-[#1A1D23]"
-                  } font-medium`}
-                >
-                  Sick Leave
-                </Text>
-                <Text className="text-gray-500 text-sm">{'05 Jan 2024 • 2 days'}</Text>
-              </View>
-            </View>
           </View>
         </View>
       </ScrollView>

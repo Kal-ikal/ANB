@@ -2,6 +2,7 @@
 import 'react-native-url-polyfill/auto'; // Wajib untuk Supabase di React Native
 import * as SecureStore from 'expo-secure-store';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 
 // Adapter untuk SecureStore agar Supabase bisa menyimpan session
 const ExpoSecureStoreAdapter = {
@@ -16,12 +17,14 @@ const ExpoSecureStoreAdapter = {
   },
 };
 
-const supabaseUrl = 'URL_SUPABASE_ANDA';
-const supabaseAnonKey = 'ANON_KEY_ANDA';
+// Placeholder URLs
+const supabaseUrl = 'https://placeholder.supabase.co';
+const supabaseAnonKey = 'placeholder';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: ExpoSecureStoreAdapter,
+    // Gunakan SecureStore hanya jika BUKAN web
+    storage: Platform.OS === 'web' ? undefined : ExpoSecureStoreAdapter,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

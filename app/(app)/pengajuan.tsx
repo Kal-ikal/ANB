@@ -26,6 +26,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
 import { useTheme } from "@/context/ThemeContext";
+import { supabase } from '@/lib/supabase';
 
 cssInterop(LinearGradient, { className: "style" });
 
@@ -50,11 +51,11 @@ type LeaveType = {
 // CONSTANTS
 // ===========================
 const LEAVE_TYPES: LeaveType[] = [
-  { id: "annual", name: "Annual Leave" },
-  { id: "sick", name: "Sick Leave" },
-  { id: "personal", name: "Personal Leave" },
-  { id: "maternity", name: "Maternity Leave" },
-  { id: "paternity", name: "Paternity Leave" },
+  { id: "Cuti Tahunan", name: "Annual Leave" },
+  { id: "Cuti Sakit", name: "Sick Leave" },
+  { id: "Cuti Darurat", name: "Emergency Leave" },
+  { id: "Cuti Melahirkan", name: "Maternity Leave" },
+  { id: "Cuti Lainnya", name: "Other Leave" },
 ];
 
 const TOTAL_STEPS = 3;
@@ -87,6 +88,7 @@ export default function LeaveApplicationForm() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerField, setDatePickerField] = useState<"start" | "end">("start");
   const [tempDate, setTempDate] = useState(new Date());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ===========================
   // REFS
@@ -245,7 +247,7 @@ export default function LeaveApplicationForm() {
     });
   }, []);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     const formattedStartDate = formatDate(formData.startDate);
     const formattedEndDate = formatDate(formData.endDate);
     const totalDays = formData.days;
@@ -259,8 +261,34 @@ export default function LeaveApplicationForm() {
           text: "Submit",
           onPress: async () => {
             try {
-              // Simulasi API call
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+              setIsSubmitting(true);
+
+              // 1. Get User & Employee ID
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) throw new Error("No authenticated user found");
+
+              const { data: employee, error: empError } = await supabase
+                .from('employees')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+
+              if (empError || !employee) throw new Error("Employee record not found");
+
+              // 2. Insert into leave_requests
+              const { error: insertError } = await supabase
+                .from('leave_requests')
+                .insert({
+                  employee_id: employee.id,
+                  leave_type: formData.leaveType,
+                  start_date: formData.startDate,
+                  end_date: formData.endDate,
+                  reason: formData.reason,
+                  status: 'Dalam Proses', // Default status 'Pending' / 'Dalam Proses'
+                  user_id: user.id
+                });
+
+              if (insertError) throw insertError;
 
               Alert.alert(
                 "Application Submitted",
@@ -274,18 +302,20 @@ export default function LeaveApplicationForm() {
                   },
                 ]
               );
-            } catch (error) {
+            } catch (error: any) {
               console.error("Submit error:", error);
               Alert.alert(
                 "Error",
-                "Failed to submit application. Please try again."
+                error.message || "Failed to submit application. Please try again."
               );
+            } finally {
+              setIsSubmitting(false);
             }
           },
         },
       ]
     );
-  }, [formData.days, formData.startDate, formData.endDate, formatDate, router]);
+  }, [formData, formatDate, router]);
 
   const handleNext = useCallback(() => {
     Keyboard.dismiss();
@@ -771,13 +801,14 @@ export default function LeaveApplicationForm() {
 
         <TouchableOpacity
           onPress={handleNext}
-          className="flex-row items-center px-5 py-3 bg-blue-500 rounded-xl"
+          disabled={isSubmitting}
+          className={`flex-row items-center px-5 py-3 bg-blue-500 rounded-xl ${isSubmitting ? 'opacity-50' : ''}`}
           activeOpacity={0.7}
         >
           <Text className="font-medium text-white">
-            {currentStep === TOTAL_STEPS ? "Submit" : "Next"}
+            {isSubmitting ? "Submitting..." : currentStep === TOTAL_STEPS ? "Submit" : "Next"}
           </Text>
-          <ChevronRight size={20} color="#FFFFFF" />
+          {!isSubmitting && <ChevronRight size={20} color="#FFFFFF" />}
         </TouchableOpacity>
       </View>
 

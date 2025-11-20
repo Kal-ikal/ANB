@@ -28,6 +28,7 @@ import { cssInterop } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from '@/context/ThemeContext';
+import { supabase } from '@/lib/supabase';
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -80,8 +81,14 @@ export default function SettingsScreen() {
       {
         text: "Logout",
         style: "destructive",
-        onPress: () => {
-          router.replace("/");
+        onPress: async () => {
+          try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            router.replace("/");
+          } catch (error: any) {
+            Alert.alert("Error", error.message || "Failed to logout");
+          }
         },
       },
     ]);
