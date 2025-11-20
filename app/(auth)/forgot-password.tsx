@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail } from "lucide-react-native";
+import { supabase } from '@/lib/supabase';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function ForgotPasswordScreen() {
 
   const validateEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     setError("");
 
     if (!email) {
@@ -35,11 +36,19 @@ export default function ForgotPasswordScreen() {
 
     setIsLoading(true);
 
-    // Simulasi API
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://yourapp.com/reset-password', // You might want to configure this URL
+      });
+
+      if (error) throw error;
+
       setIsSuccess(true);
-    }, 1500);
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBackToLogin = () => {

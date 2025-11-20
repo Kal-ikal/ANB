@@ -12,6 +12,7 @@ import {
   BackHandler,
 } from "react-native";
 import { useSmartNavigation } from '../../hooks/useSmartNavigation';
+import { useAuth } from '../../context/AuthContext';
 import {
   Eye,
   EyeOff,
@@ -35,6 +36,7 @@ cssInterop(XCircle, { className: "style" });
 
 export default function LoginScreen() {
   const { navigateToApp, navigateToDetail, backToRoot } = useSmartNavigation();
+  const { signIn } = useAuth(); // Use Auth Context
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -115,29 +117,31 @@ export default function LoginScreen() {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (validateForm()) {
       setIsLoading(true);
       
-      setTimeout(() => {
+      try {
+        await signIn(email, password);
+        showAlert("success", "Login successful! Redirecting...");
+
+        // Navigation handled by AuthGuard, but we can trigger animation
+        setTimeout(() => {
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 500,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }).start(() => {
+             // Redirection happens automatically by AuthGuard
+          });
+        }, 500);
+
+      } catch (error: any) {
+        showAlert("error", error.message || "Invalid email or password.");
+      } finally {
         setIsLoading(false);
-        if (email === "user@example.com" && password === "password123") {
-          showAlert("success", "Login successful! Redirecting...");
-          
-          setTimeout(() => {
-            Animated.timing(fadeAnim, {
-              toValue: 0,
-              duration: 500,
-              easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
-            }).start(() => {
-              navigateToApp();
-            });
-          }, 1200);
-        } else {
-          showAlert("error", "Invalid email or password.");
-        }
-      }, 700);
+      }
     } else {
       showAlert("error", "Please fill in all fields correctly.");
     }

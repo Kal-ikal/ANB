@@ -28,7 +28,8 @@ import { cssInterop } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from '@/context/ThemeContext';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import { useUserData } from '@/hooks/useUserData';
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -36,20 +37,24 @@ cssInterop(Switch, { className: false });
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isDarkMode, toggleTheme } = useTheme(); // ✅ GUNAKAN context
+  const { isDarkMode, toggleTheme } = useTheme();
+  const { signOut } = useAuth();
+  const { employee } = useUserData();
+
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
     sms: false,
   });
 
+  // Data is now fetched via useUserData, but fallback to placeholders if loading/null
   const userData = {
-    name: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
-    phone: "+1 (555) 123-4567",
-    department: "Marketing",
-    employeeId: "EMP-00789",
-    joinDate: "Jan 15, 2020",
+    name: employee?.full_name || "User",
+    email: employee?.email || "email@example.com",
+    phone: "Not Provided", // Not in Employee type currently
+    department: employee?.department || "General",
+    employeeId: employee?.id || "N/A",
+    joinDate: employee?.join_date || "N/A",
   };
 
   const leavePolicy = [
@@ -60,7 +65,6 @@ export default function SettingsScreen() {
     { type: "Paternity Leave", days: 10, carryOver: 0, maxConsecutive: 10 },
   ];
 
-  // ✅ Wrapper untuk toggleTheme dengan Alert
   const handleToggleTheme = () => {
     toggleTheme();
     Alert.alert("Theme Changed", `Switched to ${!isDarkMode ? 'dark' : 'light'} mode`, [
@@ -83,9 +87,8 @@ export default function SettingsScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            const { error } = await supabase.auth.signOut();
-            if (error) throw error;
-            router.replace("/");
+            await signOut();
+            // AuthGuard will handle redirection to Landing ('/')
           } catch (error: any) {
             Alert.alert("Error", error.message || "Failed to logout");
           }
@@ -156,17 +159,6 @@ export default function SettingsScreen() {
             </View>
             <View className="mb-4">
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
-                Phone
-              </Text>
-              <View className="flex-row items-center">
-                <Phone color={isDarkMode ? "#9CA3AF" : "#6B7280"} size={16} style={{ marginRight: 8 }} />
-                <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-medium`}>
-                  {userData.phone}
-                </Text>
-              </View>
-            </View>
-            <View className="mb-4">
-              <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
                 Department
               </Text>
               <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-medium`}>
@@ -175,9 +167,9 @@ export default function SettingsScreen() {
             </View>
             <View>
               <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"} text-sm mb-1`}>
-                Employee ID
+                Employee ID (UUID)
               </Text>
-              <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-medium`}>
+              <Text className={`${isDarkMode ? "text-white" : "text-[#1A1D23]"} font-medium text-xs`}>
                 {userData.employeeId}
               </Text>
             </View>
