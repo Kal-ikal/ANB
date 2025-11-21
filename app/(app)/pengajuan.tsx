@@ -9,6 +9,7 @@ import {
   Platform,
   BackHandler,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -27,6 +28,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from '@/lib/supabase';
+import { useUserData } from '@/hooks/useUserData';
 
 cssInterop(LinearGradient, { className: "style" });
 
@@ -71,6 +73,7 @@ export default function LeaveApplicationForm() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isDarkMode: isDark } = useTheme();
+  const { employee } = useUserData();
 
   // ===========================
   // STATE
@@ -252,6 +255,11 @@ export default function LeaveApplicationForm() {
     const formattedEndDate = formatDate(formData.endDate);
     const totalDays = formData.days;
 
+    if (!employee?.id) {
+      Alert.alert("Error", "User data not found. Please try reloading the app.");
+      return;
+    }
+
     Alert.alert(
       "Submit Leave Application?",
       `You are applying for ${totalDays} days of leave from ${formattedStartDate} to ${formattedEndDate}`,
@@ -263,20 +271,8 @@ export default function LeaveApplicationForm() {
             try {
               setIsSubmitting(true);
 
-              // 1. Get User & Employee ID
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) throw new Error("No authenticated user found");
-
-              const { data: employee, error: empError } = await supabase
-                .from('employees')
-                .select('id')
-                .eq('user_id', user.id)
-                .single();
-
-              if (empError || !employee) throw new Error("Employee record not found");
-
-              // 2. Insert into leave_requests
-              const { error: insertError } = await supabase
+              // 1. Insert into leave_requests
+              const { data: requestData, error: insertError } = await supabase
                 .from('leave_requests')
                 .insert({
                   employee_id: employee.id,
@@ -284,15 +280,64 @@ export default function LeaveApplicationForm() {
                   start_date: formData.startDate,
                   end_date: formData.endDate,
                   reason: formData.reason,
-                  status: 'Dalam Proses', // Default status 'Pending' / 'Dalam Proses'
-                  user_id: user.id
-                });
+                  status: 'Menunggu', // Status awal
+                  current_step_order: 1, // Step awal
+                })
+                .select('id') // Retrieve the ID
+                .single();
 
               if (insertError) throw insertError;
+              if (!requestData) throw new Error("Failed to retrieve new request ID");
+
+              const newRequestId = requestData.id;
+
+              // 2. Bulk Insert into approval_steps
+              const approvalSteps = [
+                {
+                  request_id: newRequestId,
+                  name: "Handover/Rekan Kerja",
+                  role: "manager",
+                  step_order: 1,
+                  status: "Menunggu",
+                },
+                {
+                  request_id: newRequestId,
+                  name: "DFD",
+                  role: "dfd_lead",
+                  step_order: 2,
+                  status: "Menunggu",
+                },
+                {
+                  request_id: newRequestId,
+                  name: "HRD",
+                  role: "hrd",
+                  step_order: 3,
+                  status: "Menunggu",
+                },
+                {
+                  request_id: newRequestId,
+                  name: "Admin Final",
+                  role: "admin",
+                  step_order: 4,
+                  status: "Menunggu",
+                },
+              ];
+
+              const { error: stepsError } = await supabase
+                .from('approval_steps')
+                .insert(approvalSteps);
+
+              if (stepsError) {
+                // Optional: Rollback logic could go here (delete the request),
+                // but for now we just throw error and let user know something went wrong.
+                // In a real app, we might want to delete the orphaned request.
+                console.error("Error inserting steps:", stepsError);
+                throw new Error("Failed to initialize approval workflow.");
+              }
 
               Alert.alert(
                 "Application Submitted",
-                "Your leave application has been submitted successfully.",
+                "Your leave application has been submitted successfully and is now pending approval.",
                 [
                   {
                     text: "OK",
@@ -315,7 +360,7 @@ export default function LeaveApplicationForm() {
         },
       ]
     );
-  }, [formData, formatDate, router]);
+  }, [formData, formatDate, router, employee]);
 
   const handleNext = useCallback(() => {
     Keyboard.dismiss();
@@ -805,10 +850,16 @@ export default function LeaveApplicationForm() {
           className={`flex-row items-center px-5 py-3 bg-blue-500 rounded-xl ${isSubmitting ? 'opacity-50' : ''}`}
           activeOpacity={0.7}
         >
-          <Text className="font-medium text-white">
-            {isSubmitting ? "Submitting..." : currentStep === TOTAL_STEPS ? "Submit" : "Next"}
-          </Text>
-          {!isSubmitting && <ChevronRight size={20} color="#FFFFFF" />}
+           {isSubmitting ? (
+             <ActivityIndicator size="small" color="#FFFFFF" />
+           ) : (
+            <>
+              <Text className="font-medium text-white">
+                {currentStep === TOTAL_STEPS ? "Submit" : "Next"}
+              </Text>
+              <ChevronRight size={20} color="#FFFFFF" />
+            </>
+           )}
         </TouchableOpacity>
       </View>
 
