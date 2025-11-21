@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, TouchableOpacity, Platform } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Home,
-  FileText,
   DollarSign,
   User,
   Settings,
@@ -45,12 +43,97 @@ const TabIcon = ({
   }
 };
 
+// Helper component to handle individual tab logic and animations
+// This fixes the "React Hook called inside a callback" error
+const TabItem = ({
+  route,
+  index,
+  state,
+  navigation,
+}: {
+  route: any;
+  index: number;
+  state: any;
+  descriptors: any;
+  navigation: any;
+}) => {
+  // Removed unused 'options' from destructuring
+  const isFocused = state.index === index;
+  const isProminent = route.name === 'pengajuan';
+
+  const scale = useSharedValue(1);
+
+  const onPress = () => {
+    scale.value = withSequence(
+      withTiming(0.9, { duration: 100 }),
+      withSpring(1, { damping: 10, stiffness: 100 })
+    );
+
+    const event = navigation.emit({
+      type: 'tabPress',
+      target: route.key,
+      canPreventDefault: true,
+    });
+
+    if (!isFocused && !event.defaultPrevented) {
+      navigation.navigate(route.name, route.params);
+    }
+  };
+
+  const onLongPress = () => {
+    navigation.emit({
+      type: 'tabLongPress',
+      target: route.key,
+    });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  // Render Prominent Center Button
+  if (isProminent) {
+    return (
+      <AnimatedTouchableOpacity
+        onPress={onPress}
+        onLongPress={onLongPress}
+        style={[animatedStyle]}
+        className="relative -top-6"
+        activeOpacity={0.9}
+      >
+        <View
+          className="w-16 h-16 rounded-full bg-blue-600 items-center justify-center shadow-lg shadow-blue-500/50 border-4 border-[#EFF6FF] dark:border-gray-900"
+        >
+          <TabIcon name={route.name} color="#FFFFFF" focused={isFocused} />
+        </View>
+      </AnimatedTouchableOpacity>
+    );
+  }
+
+  // Render Standard Tab Item
+  return (
+    <AnimatedTouchableOpacity
+      onPress={onPress}
+      onLongPress={onLongPress}
+      style={[animatedStyle, { flex: 1 }]}
+      className="items-center justify-center h-full"
+      activeOpacity={0.7}
+    >
+      <TabIcon
+        name={route.name}
+        color={isFocused ? '#2563EB' : '#9CA3AF'}
+        focused={isFocused}
+      />
+    </AnimatedTouchableOpacity>
+  );
+};
+
 export default function CustomTabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
-  const insets = useSafeAreaInsets();
+  // Removed unused insets
 
   return (
     <View
@@ -65,87 +148,16 @@ export default function CustomTabBar({
         elevation: 10,
       }}
     >
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
-        const isProminent = route.name === 'pengajuan';
-
-        const scale = useSharedValue(1);
-
-        const onPress = () => {
-          scale.value = withSequence(
-            withTiming(0.9, { duration: 100 }),
-            withSpring(1, { damping: 10, stiffness: 100 })
-          );
-
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
-          }
-        };
-
-        const onLongPress = () => {
-          navigation.emit({
-            type: 'tabLongPress',
-            target: route.key,
-          });
-        };
-
-        const animatedStyle = useAnimatedStyle(() => ({
-          transform: [{ scale: scale.value }],
-        }));
-
-        // Render Prominent Center Button
-        if (isProminent) {
-          return (
-            <AnimatedTouchableOpacity
-              key={route.key}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              style={[animatedStyle]}
-              className="relative -top-6"
-              activeOpacity={0.9}
-            >
-              <View
-                className="w-16 h-16 rounded-full bg-blue-600 items-center justify-center shadow-lg shadow-blue-500/50 border-4 border-[#EFF6FF] dark:border-gray-900"
-              >
-                <TabIcon name={route.name} color="#FFFFFF" focused={isFocused} />
-              </View>
-            </AnimatedTouchableOpacity>
-          );
-        }
-
-        // Render Standard Tab Item
-        return (
-          <AnimatedTouchableOpacity
-            key={route.key}
-            onPress={onPress}
-            onLongPress={onLongPress}
-            style={[animatedStyle, { flex: 1 }]}
-            className="items-center justify-center h-full"
-            activeOpacity={0.7}
-          >
-            <TabIcon
-              name={route.name}
-              color={isFocused ? '#2563EB' : '#9CA3AF'}
-              focused={isFocused}
-            />
-            {/* Optional: Label */}
-            {/* <Text
-              className={`text-[10px] font-medium mt-1 ${
-                isFocused ? 'text-blue-600' : 'text-gray-400'
-              }`}
-            >
-              {options.title}
-            </Text> */}
-          </AnimatedTouchableOpacity>
-        );
-      })}
+      {state.routes.map((route, index) => (
+        <TabItem
+          key={route.key}
+          route={route}
+          index={index}
+          state={state}
+          descriptors={descriptors}
+          navigation={navigation}
+        />
+      ))}
     </View>
   );
 }

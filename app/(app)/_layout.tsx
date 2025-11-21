@@ -1,5 +1,4 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet } from 'react-native';
 import CustomTabBar from '@/components/CustomTabBar';
 
 export default function AppLayout() {
