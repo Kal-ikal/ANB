@@ -4,7 +4,7 @@ import type { Href } from 'expo-router';
 
 export function useSmartNavigation() {
   const navigate = useCallback((
-    path: string | Href, // ← PERBAIKAN: ganti ke string | Href
+    path: string | Href,
     options: { 
       replace?: boolean; 
       reset?: boolean;
@@ -14,14 +14,20 @@ export function useSmartNavigation() {
     const { replace = false, reset = false, dismissAll = false } = options;
     
     if (dismissAll) {
-      // ✅ Untuk dismiss semua modal dan kembali ke root
-      router.dismissAll();
+      // ✅ Try dismissAll but catch potential errors if no stack to dismiss
+      try {
+        if (router.canDismiss()) {
+          router.dismissAll();
+        }
+      } catch (e) {
+        // Ignore POP_TO_TOP errors if already at top
+      }
       router.replace(path as any);
       return;
     }
     
     if (reset) {
-      // ✅ Reset navigation stack lengkap
+      // ✅ Reset navigation stack via replace
       router.replace(path as any);
       return;
     }
@@ -33,43 +39,45 @@ export function useSmartNavigation() {
     }
   }, []);
   
-  // ✅ Navigasi dengan reset stack - untuk auth -> app
   const navigateWithReset = useCallback((path: string | Href) => {
     router.replace(path as any);
   }, []);
   
-  // ✅ Navigasi untuk dismiss semua dan ke root
   const navigateToRoot = useCallback(() => {
-    router.dismissAll();
+    // Avoid dismissAll if not needed or if it causes issues
+    try {
+      if (router.canDismiss()) {
+        router.dismissAll();
+      }
+    } catch (e) {
+      // ignore
+    }
     router.replace('/');
   }, []);
   
-  // ✅ Navigasi untuk back ke root (landing page)
   const backToRoot = useCallback(() => {
-    if (router.canGoBack()) {
-      router.dismissAll();
-      router.replace('/');
-    } else {
-      router.replace('/');
+    try {
+      if (router.canDismiss()) {
+        router.dismissAll();
+      }
+    } catch (e) {
+      // ignore
     }
+    router.replace('/');
   }, []);
   
-  // ✅ Untuk navigasi antar tab - gunakan replace
   const navigateToTab = useCallback((tabName: string) => {
     navigate(`/(app)/${tabName}`, { replace: true });
   }, [navigate]);
   
-  // ✅ Untuk navigasi ke detail - gunakan push (bisa back)
   const navigateToDetail = useCallback((path: string | Href) => {
     navigate(path, { replace: false });
   }, [navigate]);
   
-  // ✅ Untuk auth -> app transition - reset stack
   const navigateToApp = useCallback(() => {
     navigate('/(app)/home', { reset: true });
   }, [navigate]);
   
-  // ✅ Untuk app -> auth transition - reset stack  
   const navigateToAuth = useCallback(() => {
     navigate('/(auth)/login', { reset: true });
   }, [navigate]);

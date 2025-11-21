@@ -8,10 +8,15 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        // Hide default tab bar
+        // Hide default tab bar since we render our custom overlay FAB
         tabBarShowLabel: false,
-        // animation: 'none', // No longer standard option, handled by custom tab
+        // Ensure the standard tab bar is hidden completely layout-wise
+        tabBarStyle: { display: 'none' },
       }}
+      // We pass a function that renders the custom tab bar overlay.
+      // Note: Expo Router / React Navigation puts this component at the bottom of the screen container.
+      // Because our CustomTabBar uses absolute positioning and portals (effectively via absolute),
+      // it will float correctly.
       tabBar={(props) => <CustomTabBar />}
     >
       <Tabs.Screen 
@@ -47,7 +52,3 @@ export default function AppLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  // Styles moved to CustomTabBar or irrelevant now
-});

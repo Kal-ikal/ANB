@@ -12,7 +12,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { AuthGuard } from "../components/AuthGuard";
 import "./global.css";
 
-// ✅ Aktifkan native screens & freeze untuk performa maksimal
+// ✅ Optimize screen performance
 enableScreens(true);
 enableFreeze(true);
 
@@ -23,16 +23,29 @@ export default function RootLayout() {
     const configNav = async () => {
       if (Platform.OS === "android") {
         try {
-          await NavigationBar.setBackgroundColorAsync("#EFF6FF");
+          // Force navigation bar to be visible and consistent
+          await NavigationBar.setVisibilityAsync('visible');
+          await NavigationBar.setBehaviorAsync('inset-touch');
+          await NavigationBar.setBackgroundColorAsync("#EFF6FF"); // Match theme
           await NavigationBar.setButtonStyleAsync("dark");
-        } catch {}
+        } catch (e) {
+          console.error("Failed to configure navigation bar:", e);
+        }
       }
     };
+
+    // Initial config
     configNav();
-    const sub = AppState.addEventListener("change", (s) => {
-      if (s === "active") setTimeout(configNav, 100);
+
+    // Re-apply on AppState change to fix "disappearing" bug
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        // Small delay to ensure UI is ready before applying nav bar changes
+        setTimeout(configNav, 100);
+      }
     });
-    return () => sub.remove();
+
+    return () => subscription.remove();
   }, []);
 
   return (

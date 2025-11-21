@@ -4,17 +4,12 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   Switch,
   Dimensions,
 } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
 import {
   Calendar,
-  FileText,
-  DollarSign,
-  User,
-  Settings,
   TrendingUp,
   TrendingDown,
   Sun,
@@ -22,7 +17,7 @@ import {
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
-import { Link, useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
@@ -32,14 +27,6 @@ cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
 
 const screenWidth = Dimensions.get("window").width;
-
-type QuickAction = {
-  id: number;
-  title: string;
-  icon: React.JSX.Element;
-  link: "/pengajuan" | "/konversi" | "/profile" | "/settings";
-  useLink: boolean;
-};
 
 type LeaveBalanceUI = {
   type: string;
@@ -117,9 +104,6 @@ export default function DashboardScreen() {
   // Process data when hooks return data
   useEffect(() => {
     if (employee) {
-      // 1. Process Allocation & Balances
-      // Use data from 'balances' table or fallbacks
-
       let annualUsed = 0;
       let sickUsed = 0;
       let specialUsed = 0;
@@ -211,42 +195,6 @@ export default function DashboardScreen() {
     }
   }, [employee, balances, history]);
 
-
-  const quickActions: QuickAction[] = [
-    {
-      id: 1,
-      title: "Apply Leave",
-      icon: <FileText color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/pengajuan",
-      useLink: false,
-    },
-    {
-      id: 2,
-      title: "Convert Leave",
-      icon: <DollarSign color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/konversi",
-      useLink: false,
-    },
-    {
-      id: 3,
-      title: "My Profile",
-      icon: <User color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/profile",
-      useLink: true,
-    },
-    {
-      id: 4,
-      title: "Settings",
-      icon: <Settings color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
-      link: "/settings",
-      useLink: true,
-    },
-  ];
-
-  const handleQuickActionPress = (link: QuickAction["link"]) => {
-    router.push(link);
-  };
-
   return (
     <View
       className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
@@ -301,7 +249,7 @@ export default function DashboardScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 120 }} // ✅ Extra padding for FAB
       >
         <View className="px-4 mt-6">
           {/* Leave Balances */}
@@ -456,72 +404,6 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Quick Actions */}
-          <View className="mb-6">
-            <Text
-              className={`${
-                isDarkMode ? "text-white" : "text-[#1A1D23]"
-              } text-lg font-bold mb-4`}
-            >
-              Quick Actions
-            </Text>
-            <View className="flex-row flex-wrap gap-4">
-              {quickActions.map((action) => {
-                if (action.useLink) {
-                  return (
-                    <Link key={action.id} href={action.link} asChild>
-                      <TouchableOpacity
-                        className={`${
-                          isDarkMode ? "bg-gray-800" : "bg-white"
-                        } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
-                      >
-                        <View
-                          className={`${
-                            isDarkMode ? "bg-gray-700" : "bg-blue-100"
-                          } p-3 rounded-full mb-2`}
-                        >
-                          {action.icon}
-                        </View>
-                        <Text
-                          className={`${
-                            isDarkMode ? "text-white" : "text-[#1A1D23]"
-                          } font-semibold`}
-                        >
-                          {action.title}
-                        </Text>
-                      </TouchableOpacity>
-                    </Link>
-                  );
-                } else {
-                  return (
-                    <TouchableOpacity
-                      key={action.id}
-                      onPress={() => handleQuickActionPress(action.link)}
-                      className={`${
-                        isDarkMode ? "bg-gray-800" : "bg-white"
-                      } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
-                    >
-                      <View
-                        className={`${
-                          isDarkMode ? "bg-gray-700" : "bg-blue-100"
-                        } p-3 rounded-full mb-2`}
-                      >
-                        {action.icon}
-                      </View>
-                      <Text
-                        className={`${
-                          isDarkMode ? "text-white" : "text-[#1A1D23]"
-                        } font-semibold`}
-                      >
-                        {action.title}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }
-              })}
-            </View>
-          </View>
-
           {/* Upcoming Leaves */}
           <View
             className={`${
@@ -564,15 +446,6 @@ export default function DashboardScreen() {
           </View>
         </View>
       </ScrollView>
-
-      {/* Floating Button */}
-      <TouchableOpacity
-        onPress={() => router.push("/pengajuan")}
-        className="absolute bottom-10 right-6 bg-blue-500 p-4 rounded-full shadow-lg"
-        activeOpacity={0.8}
-      >
-        <Calendar color="white" size={24} />
-      </TouchableOpacity>
     </View>
   );
 }
