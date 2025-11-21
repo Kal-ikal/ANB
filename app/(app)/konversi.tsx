@@ -45,7 +45,7 @@ export default function LeaveConversionScreen() {
   const { isDarkMode: isDark } = useTheme();
   const [conversionRequested, setConversionRequested] = useState(false);
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Removed unused isLoading state
 
   // ✅ Ref untuk ScrollView
   const scrollRef = useRef<ScrollView>(null);
@@ -63,7 +63,6 @@ export default function LeaveConversionScreen() {
 
   const fetchLeaveBalances = async () => {
     try {
-      setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -126,7 +125,7 @@ export default function LeaveConversionScreen() {
     } catch (error) {
       console.error("Error fetching conversion data:", error);
     } finally {
-      setIsLoading(false);
+      // No loading state to toggle
     }
   };
 
@@ -197,19 +196,11 @@ export default function LeaveConversionScreen() {
                 const { data: employee } = await supabase.from('employees').select('id').eq('user_id', user.id).single();
                 if (!employee) throw new Error("Employee not found");
 
-                // Insert into leave_conversions table (Improvisation: assuming table exists or using leave_requests with specific type)
-                // Looking at csv files, there is leave_conversions_rows.csv, so likely a table `leave_conversions`
-                // But I don't have the schema. I'll try to insert into `leave_requests` as a special type 'Konversi' or similar if table fails,
-                // OR just mock the success if I can't write to a table I'm not sure about.
-                // Wait, I saw `leave_conversions_rows.csv` in the file list.
-                // Let's assume `leave_requests` for now to be safe as I know that works, or just log it.
-                // The user said "agar bisa sinkron dengan database".
-                // I will try to insert into `leave_requests` with type "Conversion Request" so it shows up in history at least.
-
+                // Insert into leave_requests as a 'Konversi Cuti' type since we are improvising database compatibility
                 const { error } = await supabase.from('leave_requests').insert({
                     employee_id: employee.id,
                     leave_type: 'Konversi Cuti',
-                    start_date: new Date().toISOString(), // Mark today
+                    start_date: new Date().toISOString(),
                     end_date: new Date().toISOString(),
                     reason: `Conversion of ${calculations.totalEligibleDays} days. Net: $${calculations.netAmount}`,
                     status: 'Dalam Proses',

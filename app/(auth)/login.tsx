@@ -35,7 +35,7 @@ cssInterop(CheckCircle, { className: "style" });
 cssInterop(XCircle, { className: "style" });
 
 export default function LoginScreen() {
-  const { navigateToApp, navigateToDetail, backToRoot } = useSmartNavigation();
+  const { navigateToDetail, backToRoot } = useSmartNavigation();
   const { signIn } = useAuth(); // Use Auth Context
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

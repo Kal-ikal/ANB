@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSegments, useRouter, usePathname } from 'expo-router';
+import { useSegments, useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { View, ActivityIndicator } from 'react-native';
 

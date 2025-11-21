@@ -26,7 +26,7 @@ import { Link, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
-import { useUserData, UpcomingLeave, ChartData } from "@/hooks/useUserData";
+import { useUserData } from "@/hooks/useUserData";
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -65,7 +65,7 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   // Use the centralized hook
-  const { employee, balances, history, loading, refetch } = useUserData();
+  const { employee, balances, history, refetch } = useUserData();
 
   // Derived State
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalanceUI[]>([
@@ -119,14 +119,6 @@ export default function DashboardScreen() {
     if (employee) {
       // 1. Process Allocation & Balances
       // Use data from 'balances' table or fallbacks
-      // Assuming specific balance types for now to match UI
-      const annualBal = balances.find(b => b.leave_type === 'Annual') || { total_allocation: 12, used_amount: 0 };
-      // Note: 'balances' array might be empty or have different types.
-      // For this dashboard, we aggregate from history if balances table is not sufficient or we want dynamic calculation.
-      // But typically we use the 'balances' table as truth.
-
-      // Let's re-calculate usage from 'history' to be sure, or rely on 'balances' if trustworthy.
-      // The original code calculated usage on the fly.
 
       let annualUsed = 0;
       let sickUsed = 0;
