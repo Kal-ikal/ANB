@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView, RefreshControl, StyleSheet, Platform } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, RefreshControl, StyleSheet, Platform, ActivityIndicator } from "react-native";
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
-import { useCustomBackHandler } from '../hooks/useCustomBackHandler'; // ← TAMBAH
+import { useCustomBackHandler } from '../hooks/useCustomBackHandler';
+import { useAuth } from '@/context/AuthContext';
 import { Calendar, BarChart2, Users, Shield, Plus } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -19,8 +20,9 @@ interface FAQ {
 }
 
 const LandingScreen: React.FC = () => {
-  const { navigateToDetail } = useSmartNavigation(); // ← HAPUS backToRoot
-  useCustomBackHandler(); // ← TAMBAH - handle semua back logic
+  const { navigateToDetail } = useSmartNavigation();
+  useCustomBackHandler();
+  const { loading, session } = useAuth(); // ✅ Use Auth Context
   
   const [activeFeature, setActiveFeature] = useState<number>(0);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -67,15 +69,6 @@ const LandingScreen: React.FC = () => {
     }
   ];
 
-  // ❌ HAPUS SELURUH useEffect INI - sudah digantikan useCustomBackHandler
-  // useEffect(() => {
-  //   const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-  //     BackHandler.exitApp();
-  //     return true;
-  //   });
-  //   return () => backHandler.remove();
-  // }, []);
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
@@ -90,6 +83,16 @@ const LandingScreen: React.FC = () => {
   const prevFeature = () => {
     setActiveFeature((prev) => (prev - 1 + features.length) % features.length);
   };
+
+  // ✅ Prevent Flash of Unauthenticated Content
+  // If loading OR session exists (redirect pending), show loader instead of content
+  if (loading || session) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#EFF6FF' }}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
