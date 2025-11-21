@@ -1,4 +1,3 @@
-//app/(app)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import CustomTabBar from '@/components/CustomTabBar';
@@ -8,16 +7,9 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        // Hide default tab bar since we render our custom overlay FAB
         tabBarShowLabel: false,
-        // Ensure the standard tab bar is hidden completely layout-wise
-        tabBarStyle: { display: 'none' },
       }}
-      // We pass a function that renders the custom tab bar overlay.
-      // Note: Expo Router / React Navigation puts this component at the bottom of the screen container.
-      // Because our CustomTabBar uses absolute positioning and portals (effectively via absolute),
-      // it will float correctly.
-      tabBar={(props) => <CustomTabBar />}
+      tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tabs.Screen 
         name="home" 
@@ -26,15 +18,15 @@ export default function AppLayout() {
         }} 
       />
       <Tabs.Screen 
-        name="pengajuan" 
+        name="konversi"
         options={{ 
-          title: 'Pengajuan',
+          title: 'Konversi',
         }} 
       />
       <Tabs.Screen 
-        name="konversi" 
+        name="pengajuan"
         options={{ 
-          title: 'Konversi',
+          title: 'Pengajuan',
         }} 
       />
       <Tabs.Screen 

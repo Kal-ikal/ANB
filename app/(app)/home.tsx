@@ -6,6 +6,10 @@ import {
   ScrollView,
   Switch,
   Dimensions,
+  BackHandler,
+  ToastAndroid,
+  Platform,
+  Alert,
 } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
 import {
@@ -51,6 +55,9 @@ export default function DashboardScreen() {
   const [switchReady, setSwitchReady] = useState(false);
   const router = useRouter();
 
+  // Double Tap Exit State
+  const [exitAppCount, setExitAppCount] = useState(0);
+
   // Use the centralized hook
   const { employee, balances, history, refetch } = useUserData();
 
@@ -74,6 +81,37 @@ export default function DashboardScreen() {
     { value: 0, label: "Special" },
   ]);
   const [upcomingLeaves, setUpcomingLeaves] = useState<UpcomingLeaveUI[]>([]);
+
+  // Double Back to Exit Logic
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (exitAppCount === 0) {
+          setExitAppCount(prev => prev + 1);
+
+          if (Platform.OS === 'android') {
+            ToastAndroid.show("Tekan sekali lagi untuk keluar aplikasi", ToastAndroid.SHORT);
+          } else {
+            // iOS fallback - though standard iOS UX doesn't usually use this pattern
+            Alert.alert("Exit App", "Press back again to exit.");
+          }
+
+          setTimeout(() => {
+            setExitAppCount(0);
+          }, 2000); // Reset after 2 seconds
+
+          return true; // Prevent default behavior
+        } else if (exitAppCount === 1) {
+          BackHandler.exitApp();
+          return true;
+        }
+        return false;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [exitAppCount])
+  );
 
   // Prefetch routes
   useEffect(() => {
@@ -249,7 +287,7 @@ export default function DashboardScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }} // ✅ Extra padding for FAB
+        contentContainerStyle={{ paddingBottom: 120 }} // ✅ Extra padding for Floating Tab Bar
       >
         <View className="px-4 mt-6">
           {/* Leave Balances */}

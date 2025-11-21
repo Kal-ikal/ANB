@@ -1,230 +1,151 @@
-import React, { useState, useCallback } from "react";
+import React from 'react';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Platform,
-  Dimensions,
-  Pressable,
-} from "react-native";
-import { useRouter, usePathname } from "expo-router";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  runOnUI,
-  interpolate,
-  Extrapolation,
-  FadeIn,
-  FadeOut,
-} from "react-native-reanimated";
-import { BlurView } from "expo-blur";
-import {
-  Menu,
-  X,
   Home,
   FileText,
   DollarSign,
   User,
   Settings,
-} from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+  Plus,
+} from 'lucide-react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
-// Define menu items
-const MENU_ITEMS = [
-  { name: "Home", route: "/home", icon: Home, color: "#3B82F6" },
-  { name: "Pengajuan", route: "/pengajuan", icon: FileText, color: "#10B981" },
-  { name: "Konversi", route: "/konversi", icon: DollarSign, color: "#F59E0B" },
-  { name: "Profile", route: "/profile", icon: User, color: "#8B5CF6" },
-  { name: "Settings", route: "/settings", icon: Settings, color: "#6B7280" },
-];
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
-const FAB_SIZE = 56;
-const ITEM_SIZE = 48;
-const RADIUS = 100; // Distance from FAB center when expanded
+const TabIcon = ({
+  name,
+  color,
+  focused,
+}: {
+  name: string;
+  color: string;
+  focused: boolean;
+}) => {
+  switch (name) {
+    case 'home':
+      return <Home size={24} color={color} />;
+    case 'pengajuan':
+      return <Plus size={28} color="#FFFFFF" />; // Prominent icon
+    case 'konversi':
+      return <DollarSign size={24} color={color} />;
+    case 'profile':
+      return <User size={24} color={color} />;
+    case 'settings':
+      return <Settings size={24} color={color} />;
+    default:
+      return <Home size={24} color={color} />;
+  }
+};
 
-// Reanimated Component wrappers
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-export default function CustomTabBar() {
-  const router = useRouter();
-  const pathname = usePathname();
+export default function CustomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
-  // Shared Values
-  const isOpen = useSharedValue(0); // 0 = closed, 1 = open
-
-  const toggleMenu = useCallback(() => {
-    // Strict use of runOnUI for performance is handled by Reanimated automatically for shared value updates
-    // but logic is simple here.
-    isOpen.value = withSpring(isOpen.value === 0 ? 1 : 0, {
-      mass: 0.5,
-      damping: 12,
-      stiffness: 100,
-    });
-  }, []);
-
-  const closeMenu = useCallback(() => {
-    isOpen.value = withSpring(0, { mass: 0.5, damping: 12 });
-  }, []);
-
-  const handleNavigation = useCallback(
-    (route: string) => {
-      closeMenu();
-      // Small delay to allow animation to start before navigation (prevents stutter)
-      setTimeout(() => {
-        router.push(route as any);
-      }, 50);
-    },
-    [closeMenu, router]
-  );
-
-  // Animated Styles
-  const fabStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(isOpen.value, [0, 1], [0, 45], Extrapolation.CLAMP);
-    return {
-      transform: [{ rotate: `${rotate}deg` }],
-    };
-  });
-
-  const blurStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(isOpen.value, { duration: 200 }),
-      zIndex: isOpen.value === 0 ? -1 : 50, // Hide when closed
-    };
-  });
-
-  // Calculate menu item position (Fan out animation)
-  const getMenuItemStyle = (index: number, total: number) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useAnimatedStyle(() => {
-      // Fan out angles: typically from 180 (left) to 90 (up) or similar.
-      // Let's do a fan out from bottom-right corner.
-      // Angles: 180 (Left) to 90 (Up).
-      // Total arc = 90 degrees.
-      // Step = 90 / (total - 1).
-
-      const startAngle = 180;
-      const endAngle = 270; // 270 is Top (0 is Right, 90 Down, 180 Left, 270 Up) in standard math, but screen coords y is down.
-      // Using radians for sin/cos. 0 is right (x+), PI/2 is down (y+).
-      // We want Up (y-) and Left (x-).
-      // Angles between 180 deg (PI) and 270 deg (1.5 PI).
-
-      const angleStep = (270 - 180) / (total - 1);
-      const angleDeg = 270 - (index * angleStep); // Spread from top down to left
-      const angleRad = (angleDeg * Math.PI) / 180;
-
-      const radius = interpolate(isOpen.value, [0, 1], [0, RADIUS], Extrapolation.CLAMP);
-      const scale = interpolate(isOpen.value, [0, 1], [0.5, 1], Extrapolation.CLAMP);
-      const opacity = interpolate(isOpen.value, [0, 0.5, 1], [0, 0, 1], Extrapolation.CLAMP);
-
-      const translateX = Math.cos(angleRad) * radius;
-      const translateY = Math.sin(angleRad) * radius;
-
-      return {
-        transform: [
-          { translateX },
-          { translateY },
-          { scale },
-        ],
-        opacity,
-      };
-    });
-  };
-
   return (
-    <>
-      {/* Full Screen Blur Overlay */}
-      <AnimatedBlurView
-        intensity={30}
-        tint="light"
-        style={[
-          {
-            position: "absolute",
-            top: -Dimensions.get("window").height, // Cover entire screen
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: Dimensions.get("window").height * 2, // Ensure coverage
-          },
-          blurStyle,
-        ]}
-      >
-        <Pressable style={{ flex: 1 }} onPress={closeMenu} />
-      </AnimatedBlurView>
+    <View
+      className="absolute bottom-5 left-5 right-5 flex-row items-center justify-between bg-white dark:bg-gray-800 rounded-full shadow-xl"
+      style={{
+        paddingBottom: Platform.OS === 'ios' ? 0 : 0, // Insets handled by absolute positioning logic
+        height: 64,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 10,
+      }}
+    >
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+        const isProminent = route.name === 'pengajuan';
 
-      {/* Floating Action Button Container */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: Platform.OS === "ios" ? insets.bottom + 20 : 20,
-          right: 20,
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 100, // Above content
-        }}
-      >
-        {/* Menu Items */}
-        {MENU_ITEMS.map((item, index) => {
-          const isActive = pathname.startsWith(item.route);
-          const animatedStyle = getMenuItemStyle(index, MENU_ITEMS.length);
+        const scale = useSharedValue(1);
 
-          return (
-            <AnimatedPressable
-              key={item.name}
-              onPress={() => handleNavigation(item.route)}
-              style={[
-                {
-                  position: "absolute",
-                  width: ITEM_SIZE,
-                  height: ITEM_SIZE,
-                  borderRadius: ITEM_SIZE / 2,
-                  backgroundColor: isActive ? item.color : "white",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3.84,
-                  elevation: 5,
-                },
-                animatedStyle,
-              ]}
-            >
-              <item.icon
-                size={20}
-                color={isActive ? "white" : item.color}
-              />
-              {/* Optional Label (fade in?) - keeping clean icon only for now to match spec "Navigation buttons" */}
-            </AnimatedPressable>
+        const onPress = () => {
+          scale.value = withSequence(
+            withTiming(0.9, { duration: 100 }),
+            withSpring(1, { damping: 10, stiffness: 100 })
           );
-        })}
 
-        {/* Main FAB */}
-        <TouchableOpacity
-          onPress={toggleMenu}
-          activeOpacity={0.9}
-          style={{
-            width: FAB_SIZE,
-            height: FAB_SIZE,
-            borderRadius: FAB_SIZE / 2,
-            backgroundColor: "#2563EB",
-            alignItems: "center",
-            justifyContent: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 4.65,
-            elevation: 8,
-          }}
-        >
-          <Animated.View style={fabStyle}>
-            <Menu color="white" size={28} />
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
-    </>
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name, route.params);
+          }
+        };
+
+        const onLongPress = () => {
+          navigation.emit({
+            type: 'tabLongPress',
+            target: route.key,
+          });
+        };
+
+        const animatedStyle = useAnimatedStyle(() => ({
+          transform: [{ scale: scale.value }],
+        }));
+
+        // Render Prominent Center Button
+        if (isProminent) {
+          return (
+            <AnimatedTouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              style={[animatedStyle]}
+              className="relative -top-6"
+              activeOpacity={0.9}
+            >
+              <View
+                className="w-16 h-16 rounded-full bg-blue-600 items-center justify-center shadow-lg shadow-blue-500/50 border-4 border-[#EFF6FF] dark:border-gray-900"
+              >
+                <TabIcon name={route.name} color="#FFFFFF" focused={isFocused} />
+              </View>
+            </AnimatedTouchableOpacity>
+          );
+        }
+
+        // Render Standard Tab Item
+        return (
+          <AnimatedTouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={[animatedStyle, { flex: 1 }]}
+            className="items-center justify-center h-full"
+            activeOpacity={0.7}
+          >
+            <TabIcon
+              name={route.name}
+              color={isFocused ? '#2563EB' : '#9CA3AF'}
+              focused={isFocused}
+            />
+            {/* Optional: Label */}
+            {/* <Text
+              className={`text-[10px] font-medium mt-1 ${
+                isFocused ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              {options.title}
+            </Text> */}
+          </AnimatedTouchableOpacity>
+        );
+      })}
+    </View>
   );
 }

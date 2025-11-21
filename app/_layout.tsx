@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -23,11 +23,11 @@ export default function RootLayout() {
     const configNav = async () => {
       if (Platform.OS === "android") {
         try {
-          // Force navigation bar to be visible and consistent
+          // Force navigation bar to be visible and consistent with Black background
           await NavigationBar.setVisibilityAsync('visible');
           await NavigationBar.setBehaviorAsync('inset-touch');
-          await NavigationBar.setBackgroundColorAsync("#EFF6FF"); // Match theme
-          await NavigationBar.setButtonStyleAsync("dark");
+          await NavigationBar.setBackgroundColorAsync("#000000"); // Black background
+          await NavigationBar.setButtonStyleAsync("light"); // Light icons
         } catch (e) {
           console.error("Failed to configure navigation bar:", e);
         }
@@ -40,7 +40,6 @@ export default function RootLayout() {
     // Re-apply on AppState change to fix "disappearing" bug
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active") {
-        // Small delay to ensure UI is ready before applying nav bar changes
         setTimeout(configNav, 100);
       }
     });
