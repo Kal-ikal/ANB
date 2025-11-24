@@ -292,32 +292,33 @@ export default function LeaveApplicationForm() {
               const newRequestId = requestData.id;
 
               // 2. Bulk Insert into approval_steps
+              // Fixed column names to match database schema
               const approvalSteps = [
                 {
-                  request_id: newRequestId,
-                  name: "Handover/Rekan Kerja",
-                  role: "manager",
+                  leave_request_id: newRequestId,
+                  step_name: "Handover/Rekan Kerja",
+                  approver_role: "manager",
                   step_order: 1,
                   status: "Menunggu",
                 },
                 {
-                  request_id: newRequestId,
-                  name: "DFD",
-                  role: "dfd_lead",
+                  leave_request_id: newRequestId,
+                  step_name: "DFD",
+                  approver_role: "dfd_lead",
                   step_order: 2,
                   status: "Menunggu",
                 },
                 {
-                  request_id: newRequestId,
-                  name: "HRD",
-                  role: "hrd",
+                  leave_request_id: newRequestId,
+                  step_name: "HRD",
+                  approver_role: "hrd",
                   step_order: 3,
                   status: "Menunggu",
                 },
                 {
-                  request_id: newRequestId,
-                  name: "Admin Final",
-                  role: "admin",
+                  leave_request_id: newRequestId,
+                  step_name: "Admin Final",
+                  approver_role: "admin",
                   step_order: 4,
                   status: "Menunggu",
                 },
@@ -328,9 +329,6 @@ export default function LeaveApplicationForm() {
                 .insert(approvalSteps);
 
               if (stepsError) {
-                // Optional: Rollback logic could go here (delete the request),
-                // but for now we just throw error and let user know something went wrong.
-                // In a real app, we might want to delete the orphaned request.
                 console.error("Error inserting steps:", stepsError);
                 throw new Error("Failed to initialize approval workflow.");
               }
