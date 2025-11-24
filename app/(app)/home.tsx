@@ -1,5 +1,5 @@
 // app/(app)/home.tsx
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   Alert,
   RefreshControl,
   TouchableOpacity,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
 import {
@@ -71,6 +73,10 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
+  // Auto-Hide Tab Bar Logic using Zustand
+  const setIsTabBarVisible = useTabBarStore((state) => state.setIsVisible);
+  const lastOffsetY = useRef(0);
+
   // Double Tap Exit State
   const [exitAppCount, setExitAppCount] = useState(0);
 
@@ -109,17 +115,11 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        // Check if Menu is Expanded. If so, let CustomTabBar handle it.
-        // Returning false bubbles the event up to the next listener (which should be CustomTabBar)
-        if (useTabBarStore.getState().isExpanded) {
-          return false;
-        }
-
         if (exitAppCount === 0) {
           setExitAppCount(prev => prev + 1);
 
           if (Platform.OS === 'android') {
-            ToastAndroid.show("Tekan sekali lagi untuk keluar aplikasi", ToastAndroid.SHORT);
+            ToastAndroid.show("Press back again to exit", ToastAndroid.SHORT);
           } else {
             Alert.alert("Exit App", "Press back again to exit.");
           }
@@ -159,14 +159,32 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       const t = setTimeout(() => setSwitchReady(true), 50);
-      // Refetch is handled by onRefresh or initial load, but we can trigger it here too if needed.
-      // refetch();
+      // Ensure Tab Bar is visible when returning to Home
+      setIsTabBarVisible(true);
       return () => {
         setSwitchReady(false);
         clearTimeout(t);
       };
     }, [])
   );
+
+  // Scroll Handler for Auto-Hide
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentY = event.nativeEvent.contentOffset.y;
+    const diff = currentY - lastOffsetY.current;
+
+    // Threshold to avoid jitter
+    if (Math.abs(diff) > 20) {
+        if (diff > 0 && currentY > 50) {
+            // Scrolling Down -> Hide
+            setIsTabBarVisible(false);
+        } else if (diff < 0) {
+            // Scrolling Up -> Show
+            setIsTabBarVisible(true);
+        }
+        lastOffsetY.current = currentY;
+    }
+  };
 
   // Process data when hooks return data
   useEffect(() => {
@@ -350,10 +368,12 @@ export default function DashboardScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 150 }} // ✅ Extra padding for Expanded Tab Bar
+        contentContainerStyle={{ paddingBottom: 100 }} // ✅ Padding for Auto-Hide Tab Bar
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
         }
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <View className="px-4 mt-6">
           {/* Leave Balances */}

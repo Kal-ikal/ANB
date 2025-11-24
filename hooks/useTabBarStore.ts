@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 
 interface TabBarState {
-  isExpanded: boolean;
-  setExpanded: (expanded: boolean) => void;
+  isVisible: boolean;
+  setIsVisible: (visible: boolean) => void;
 }
 
 export const useTabBarStore = create<TabBarState>((set) => ({
-  isExpanded: false,
-  setExpanded: (expanded) => set({ isExpanded: expanded }),
+  isVisible: true, // Default visible
+  setIsVisible: (visible) => set({ isVisible: visible }),
 }));

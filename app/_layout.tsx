@@ -16,42 +16,53 @@ import "./global.css";
 enableScreens(true);
 enableFreeze(true);
 
-export default function RootLayout() {
-  useCustomBackHandler();
-
+function NavigationBarConfig() {
   useEffect(() => {
     const configNav = async () => {
       if (Platform.OS === "android") {
         try {
-          // Force navigation bar to be visible and consistent with Black background
+          // Force navigation bar to be visible and consistent
           await NavigationBar.setVisibilityAsync('visible');
           await NavigationBar.setBehaviorAsync('inset-touch');
-          await NavigationBar.setBackgroundColorAsync("#000000"); // Black background
-          await NavigationBar.setButtonStyleAsync("light"); // Light icons
+          // Always Black Background as per requirement
+          await NavigationBar.setBackgroundColorAsync("#000000");
+          // Adaptive Icons (usually Light/White on Black bg)
+          await NavigationBar.setButtonStyleAsync("light");
         } catch (e) {
           console.error("Failed to configure navigation bar:", e);
         }
       }
     };
 
-    // Initial config
     configNav();
+  }, []);
 
-    // Re-apply on AppState change to fix "disappearing" bug
+  // Re-apply on AppState change to fix "disappearing" bug (Android quirk)
+  useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active") {
-        setTimeout(configNav, 100);
+         if (Platform.OS === "android") {
+             NavigationBar.setVisibilityAsync('visible');
+             // Re-enforce black bg just in case
+             NavigationBar.setBackgroundColorAsync("#000000");
+         }
       }
     });
-
     return () => subscription.remove();
   }, []);
+
+  return null;
+}
+
+export default function RootLayout() {
+  useCustomBackHandler();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
           <ThemeProvider>
+            <NavigationBarConfig />
             <StatusBar style="dark" backgroundColor="#EFF6FF" />
             <AuthGuard />
             <Stack
