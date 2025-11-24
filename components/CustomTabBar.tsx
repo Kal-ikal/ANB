@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -69,10 +69,10 @@ export default function CustomTabBar({
     setGlobalExpanded(nextValue === 1);
   };
 
-  const closeMenu = () => {
+  const closeMenu = useCallback(() => {
     isExpanded.value = withTiming(0, { duration: 250 });
     setGlobalExpanded(false);
-  };
+  }, []);
 
   // Back Handler to close menu if expanded
   // We use useEffect because the TabBar is always mounted and we want this listener active
@@ -94,7 +94,7 @@ export default function CustomTabBar({
     );
 
     return () => subscription.remove();
-  }, []);
+  }, [closeMenu]);
 
   const onTabPress = (
     routeKey: string,
