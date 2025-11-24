@@ -1,163 +1,255 @@
-import React from 'react';
-import { View, TouchableOpacity, Platform } from 'react-native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import React, { useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Pressable,
+  Dimensions,
+  Platform,
+} from "react-native";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import {
   Home,
+  FileText,
   DollarSign,
   User,
   Settings,
-  Plus,
-} from 'lucide-react-native';
+  Menu,
+  X,
+} from "lucide-react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withSequence,
   withTiming,
-} from 'react-native-reanimated';
+  interpolate,
+  Extrapolation,
+  runOnUI,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
 
-const TabIcon = ({
-  name,
-  color,
-  focused,
-}: {
-  name: string;
-  color: string;
-  focused: boolean;
-}) => {
-  switch (name) {
-    case 'home':
-      return <Home size={24} color={color} />;
-    case 'pengajuan':
-      return <Plus size={28} color="#FFFFFF" />; // Prominent icon
-    case 'konversi':
-      return <DollarSign size={24} color={color} />;
-    case 'profile':
-      return <User size={24} color={color} />;
-    case 'settings':
-      return <Settings size={24} color={color} />;
-    default:
-      return <Home size={24} color={color} />;
-  }
-};
+// Tab configuration matching the routes
+const TABS = [
+  { name: "home", icon: Home, label: "Home" },
+  { name: "pengajuan", icon: FileText, label: "Apply" },
+  { name: "konversi", icon: DollarSign, label: "Convert" },
+  { name: "profile", icon: User, label: "Profile" },
+  { name: "settings", icon: Settings, label: "Settings" },
+];
 
-// Helper component to handle individual tab logic and animations
-// This fixes the "React Hook called inside a callback" error
-const TabItem = ({
-  route,
-  index,
-  state,
-  navigation,
-}: {
-  route: any;
-  index: number;
-  state: any;
-  descriptors: any;
-  navigation: any;
-}) => {
-  // Removed unused 'options' from destructuring
-  const isFocused = state.index === index;
-  const isProminent = route.name === 'pengajuan';
-
-  const scale = useSharedValue(1);
-
-  const onPress = () => {
-    scale.value = withSequence(
-      withTiming(0.9, { duration: 100 }),
-      withSpring(1, { damping: 10, stiffness: 100 })
-    );
-
-    const event = navigation.emit({
-      type: 'tabPress',
-      target: route.key,
-      canPreventDefault: true,
-    });
-
-    if (!isFocused && !event.defaultPrevented) {
-      navigation.navigate(route.name, route.params);
-    }
-  };
-
-  const onLongPress = () => {
-    navigation.emit({
-      type: 'tabLongPress',
-      target: route.key,
-    });
-  };
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  // Render Prominent Center Button
-  if (isProminent) {
-    return (
-      <AnimatedTouchableOpacity
-        onPress={onPress}
-        onLongPress={onLongPress}
-        style={[animatedStyle]}
-        className="relative -top-6"
-        activeOpacity={0.9}
-      >
-        <View
-          className="w-16 h-16 rounded-full bg-blue-600 items-center justify-center shadow-lg shadow-blue-500/50 border-4 border-[#EFF6FF] dark:border-gray-900"
-        >
-          <TabIcon name={route.name} color="#FFFFFF" focused={isFocused} />
-        </View>
-      </AnimatedTouchableOpacity>
-    );
-  }
-
-  // Render Standard Tab Item
-  return (
-    <AnimatedTouchableOpacity
-      onPress={onPress}
-      onLongPress={onLongPress}
-      style={[animatedStyle, { flex: 1 }]}
-      className="items-center justify-center h-full"
-      activeOpacity={0.7}
-    >
-      <TabIcon
-        name={route.name}
-        color={isFocused ? '#2563EB' : '#9CA3AF'}
-        focused={isFocused}
-      />
-    </AnimatedTouchableOpacity>
-  );
-};
+const FAB_SIZE = 56;
+const EXPANDED_HEIGHT = 70;
+const PADDING_HORIZONTAL = 20;
 
 export default function CustomTabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
-  // Removed unused insets
+  const insets = useSafeAreaInsets();
+  const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+  // Animation State
+  const isExpanded = useSharedValue(0); // 0 = collapsed, 1 = expanded
+
+  const toggleMenu = () => {
+    // Toggle between 0 and 1
+    isExpanded.value = withSpring(isExpanded.value === 0 ? 1 : 0, {
+      damping: 15,
+      stiffness: 120,
+    });
+  };
+
+  const closeMenu = () => {
+    isExpanded.value = withTiming(0, { duration: 200 });
+  };
+
+  const onTabPress = (routeKey: string, routeName: string, isFocused: boolean) => {
+    const event = navigation.emit({
+      type: "tabPress",
+      target: routeKey,
+      canPreventDefault: true,
+    });
+
+    if (!isFocused && !event.defaultPrevented) {
+      navigation.navigate(routeName);
+    }
+
+    // Auto collapse after navigation
+    closeMenu();
+  };
+
+  // Animated Styles
+
+  // Container animates width from FAB size to full width
+  const containerStyle = useAnimatedStyle(() => {
+    const width = interpolate(
+      isExpanded.value,
+      [0, 1],
+      [FAB_SIZE, SCREEN_WIDTH - PADDING_HORIZONTAL * 2],
+      Extrapolation.CLAMP
+    );
+
+    const borderRadius = interpolate(
+      isExpanded.value,
+      [0, 1],
+      [FAB_SIZE / 2, 20],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      width,
+      borderRadius,
+    };
+  });
+
+  // FAB Icon Rotation (Menu -> X)
+  const fabIconStyle = useAnimatedStyle(() => {
+    const rotate = interpolate(isExpanded.value, [0, 1], [0, 90]);
+    const opacity = interpolate(isExpanded.value, [0, 0.5], [1, 0]);
+    return {
+      transform: [{ rotate: `${rotate}deg` }],
+      opacity,
+    };
+  });
+
+  // Close Icon Rotation/Opacity
+  const closeIconStyle = useAnimatedStyle(() => {
+    const rotate = interpolate(isExpanded.value, [0, 1], [-90, 0]);
+    const opacity = interpolate(isExpanded.value, [0.5, 1], [0, 1]);
+    return {
+      transform: [{ rotate: `${rotate}deg` }],
+      opacity,
+      position: 'absolute',
+    };
+  });
+
+  // Tab Items Opacity & Translation
+  const tabsContainerStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(isExpanded.value, [0.7, 1], [0, 1]);
+    const translateX = interpolate(isExpanded.value, [0, 1], [20, 0]);
+
+    return {
+      opacity,
+      transform: [{ translateX }],
+      // Hide completely when collapsed to avoid touch events
+      display: isExpanded.value < 0.1 ? 'none' : 'flex',
+    };
+  });
+
+  // Overlay to handle tap outside
+  const overlayStyle = useAnimatedStyle(() => {
+    return {
+      display: isExpanded.value > 0.1 ? "flex" : "none",
+      opacity: isExpanded.value,
+    };
+  });
 
   return (
-    <View
-      className="absolute bottom-5 left-5 right-5 flex-row items-center justify-between bg-white dark:bg-gray-800 rounded-full shadow-xl"
-      style={{
-        paddingBottom: Platform.OS === 'ios' ? 0 : 0, // Insets handled by absolute positioning logic
-        height: 64,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 10,
-      }}
-    >
-      {state.routes.map((route, index) => (
-        <TabItem
-          key={route.key}
-          route={route}
-          index={index}
-          state={state}
-          descriptors={descriptors}
-          navigation={navigation}
-        />
-      ))}
-    </View>
+    <>
+      {/* Transparent Overlay for Tap Outside */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: Dimensions.get("window").height,
+            backgroundColor: "rgba(0,0,0,0.3)", // Slight dim
+            zIndex: 49,
+          },
+          overlayStyle,
+        ]}
+      >
+        <Pressable style={{ flex: 1 }} onPress={closeMenu} />
+      </Animated.View>
+
+      {/* The Floating Pill / FAB */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            bottom: Platform.OS === "ios" ? insets.bottom + 10 : 20,
+            right: 20,
+            height: FAB_SIZE,
+            backgroundColor: "#2563EB", // Primary Blue
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between", // Space between tabs and fab-toggle
+            overflow: "hidden",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4.65,
+            elevation: 8,
+            zIndex: 50,
+          },
+          containerStyle,
+        ]}
+      >
+        {/* Tab Items (Visible only when expanded) */}
+        <Animated.View
+          style={[
+            {
+              flex: 1,
+              flexDirection: 'row',
+              justifyContent: 'space-evenly',
+              paddingLeft: 10,
+              paddingRight: FAB_SIZE + 5, // Make room for the toggle button
+            },
+            tabsContainerStyle
+          ]}
+        >
+          {TABS.map((tab) => {
+            const routeIndex = state.routes.findIndex(r => r.name === tab.name);
+            if (routeIndex === -1) return null;
+
+            const route = state.routes[routeIndex];
+            const isFocused = state.index === routeIndex;
+            const color = isFocused ? "#FFFFFF" : "rgba(255,255,255,0.6)";
+
+            return (
+              <TouchableOpacity
+                key={tab.name}
+                onPress={() => onTabPress(route.key, tab.name, isFocused)}
+                style={{ alignItems: 'center', paddingVertical: 8 }}
+              >
+                <tab.icon size={20} color={color} />
+                <Text style={{ color, fontSize: 10, marginTop: 2, fontWeight: isFocused ? '600' : '400' }}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </Animated.View>
+
+        {/* Toggle Button (Menu / Close) - Always Anchored Right */}
+        <TouchableOpacity
+          onPress={toggleMenu}
+          activeOpacity={0.9}
+          style={{
+            width: FAB_SIZE,
+            height: FAB_SIZE,
+            alignItems: "center",
+            justifyContent: "center",
+            position: 'absolute',
+            right: 0,
+            top: 0,
+          }}
+        >
+          <Animated.View style={fabIconStyle}>
+            <Menu color="white" size={24} />
+          </Animated.View>
+          <Animated.View style={closeIconStyle}>
+            <X color="white" size={24} />
+          </Animated.View>
+        </TouchableOpacity>
+      </Animated.View>
+    </>
   );
 }

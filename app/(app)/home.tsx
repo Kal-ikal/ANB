@@ -10,6 +10,8 @@ import {
   ToastAndroid,
   Platform,
   Alert,
+  RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
 import {
@@ -18,10 +20,14 @@ import {
   TrendingDown,
   Sun,
   Moon,
+  FileText,
+  DollarSign,
+  User,
+  Settings,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect, Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
@@ -49,10 +55,19 @@ type UpcomingLeaveUI = {
   dateString: string;
 };
 
+type QuickAction = {
+  id: number;
+  title: string;
+  icon: React.JSX.Element;
+  link: "/pengajuan" | "/konversi" | "/profile" | "/settings";
+  useLink: boolean;
+};
+
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { isDarkMode, toggleTheme } = useTheme();
   const [switchReady, setSwitchReady] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
   // Double Tap Exit State
@@ -82,6 +97,13 @@ export default function DashboardScreen() {
   ]);
   const [upcomingLeaves, setUpcomingLeaves] = useState<UpcomingLeaveUI[]>([]);
 
+  // Refresh Handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
   // Double Back to Exit Logic
   useFocusEffect(
     useCallback(() => {
@@ -92,7 +114,6 @@ export default function DashboardScreen() {
           if (Platform.OS === 'android') {
             ToastAndroid.show("Tekan sekali lagi untuk keluar aplikasi", ToastAndroid.SHORT);
           } else {
-            // iOS fallback - though standard iOS UX doesn't usually use this pattern
             Alert.alert("Exit App", "Press back again to exit.");
           }
 
@@ -131,12 +152,13 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       const t = setTimeout(() => setSwitchReady(true), 50);
-      refetch();
+      // Refetch is handled by onRefresh or initial load, but we can trigger it here too if needed.
+      // refetch();
       return () => {
         setSwitchReady(false);
         clearTimeout(t);
       };
-    }, [refetch])
+    }, [])
   );
 
   // Process data when hooks return data
@@ -207,7 +229,6 @@ export default function DashboardScreen() {
       });
 
       // Update State
-      // Prefer balances from table if available, else fallbacks
       const annualAlloc = balances.find(b => b.leave_type === 'Annual' || b.leave_type === 'Cuti Tahunan')?.total_allocation || 12;
 
       setLeaveBalances([
@@ -233,6 +254,41 @@ export default function DashboardScreen() {
     }
   }, [employee, balances, history]);
 
+  const quickActions: QuickAction[] = [
+    {
+      id: 1,
+      title: "Apply Leave",
+      icon: <FileText color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
+      link: "/pengajuan",
+      useLink: false,
+    },
+    {
+      id: 2,
+      title: "Convert Leave",
+      icon: <DollarSign color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
+      link: "/konversi",
+      useLink: false,
+    },
+    {
+      id: 3,
+      title: "My Profile",
+      icon: <User color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
+      link: "/profile",
+      useLink: true,
+    },
+    {
+      id: 4,
+      title: "Settings",
+      icon: <Settings color={isDarkMode ? "#F7F7F7" : "#1A1D23"} size={24} />,
+      link: "/settings",
+      useLink: true,
+    },
+  ];
+
+  const handleQuickActionPress = (link: QuickAction["link"]) => {
+    router.push(link);
+  };
+
   return (
     <View
       className={`${isDarkMode ? "bg-gray-900" : "bg-[#F7F7F7]"} flex-1`}
@@ -253,10 +309,10 @@ export default function DashboardScreen() {
         <View className="flex-row justify-between items-center">
           <View>
             <Text className="text-white text-2xl font-bold">
-              Annual & Benefit | User
+              Annual & Benefit
             </Text>
             <Text className="text-blue-100 text-sm mt-1">
-              Welcome back, {employee?.full_name || "User"}!
+              {employee ? `${employee.full_name} • ${employee.job_title || 'Employee'}` : "Welcome User"}
             </Text>
           </View>
 
@@ -287,7 +343,10 @@ export default function DashboardScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }} // ✅ Extra padding for Floating Tab Bar
+        contentContainerStyle={{ paddingBottom: 150 }} // ✅ Extra padding for Expanded Tab Bar
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+        }
       >
         <View className="px-4 mt-6">
           {/* Leave Balances */}
@@ -337,6 +396,72 @@ export default function DashboardScreen() {
                   </View>
                 </View>
               ))}
+            </View>
+          </View>
+
+          {/* Quick Actions */}
+          <View className="mb-6">
+            <Text
+              className={`${
+                isDarkMode ? "text-white" : "text-[#1A1D23]"
+              } text-lg font-bold mb-4`}
+            >
+              Quick Actions
+            </Text>
+            <View className="flex-row flex-wrap gap-4">
+              {quickActions.map((action) => {
+                if (action.useLink) {
+                  return (
+                    <Link key={action.id} href={action.link} asChild>
+                      <TouchableOpacity
+                        className={`${
+                          isDarkMode ? "bg-gray-800" : "bg-white"
+                        } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
+                      >
+                        <View
+                          className={`${
+                            isDarkMode ? "bg-gray-700" : "bg-blue-100"
+                          } p-3 rounded-full mb-2`}
+                        >
+                          {action.icon}
+                        </View>
+                        <Text
+                          className={`${
+                            isDarkMode ? "text-white" : "text-[#1A1D23]"
+                          } font-semibold`}
+                        >
+                          {action.title}
+                        </Text>
+                      </TouchableOpacity>
+                    </Link>
+                  );
+                } else {
+                  return (
+                    <TouchableOpacity
+                      key={action.id}
+                      onPress={() => handleQuickActionPress(action.link)}
+                      className={`${
+                        isDarkMode ? "bg-gray-800" : "bg-white"
+                      } rounded-xl p-4 flex-1 min-w-[45%] shadow-md items-center`}
+                    >
+                      <View
+                        className={`${
+                          isDarkMode ? "bg-gray-700" : "bg-blue-100"
+                        } p-3 rounded-full mb-2`}
+                      >
+                        {action.icon}
+                      </View>
+                      <Text
+                        className={`${
+                          isDarkMode ? "text-white" : "text-[#1A1D23]"
+                        } font-semibold`}
+                      >
+                        {action.title}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
+              })}
             </View>
           </View>
 

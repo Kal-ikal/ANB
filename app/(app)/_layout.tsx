@@ -1,3 +1,4 @@
+//app/(app)/_layout.tsx
 import { Tabs } from 'expo-router';
 import CustomTabBar from '@/components/CustomTabBar';
 
@@ -7,7 +8,10 @@ export default function AppLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
+        // Ensure the default tab bar is completely hidden from layout
+        tabBarStyle: { display: 'none' },
       }}
+      // Pass props to CustomTabBar to handle navigation state
       tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tabs.Screen 
@@ -17,15 +21,15 @@ export default function AppLayout() {
         }} 
       />
       <Tabs.Screen 
-        name="konversi"
-        options={{ 
-          title: 'Konversi',
-        }} 
-      />
-      <Tabs.Screen 
         name="pengajuan"
         options={{ 
           title: 'Pengajuan',
+        }} 
+      />
+      <Tabs.Screen 
+        name="konversi"
+        options={{ 
+          title: 'Konversi',
         }} 
       />
       <Tabs.Screen 
