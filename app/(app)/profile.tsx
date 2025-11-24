@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -30,43 +31,49 @@ import Animated, {
   withSpring,
   useSharedValue,
 } from "react-native-reanimated";
+import { useUserData } from "@/hooks/useUserData";
 
 cssInterop(LinearGradient, { className: "style" });
+
+// Helper for empty state
+const formatValue = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === "") return "-";
+  return String(value);
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
 
-  // Dummy data
-  const employeeData = {
-    name: "Alex Morgan",
-    position: "Senior Software Engineer",
-    department: "Engineering",
-    employeeId: "EMP-00789",
-    email: "alex.morgan@company.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main Street, San Francisco, CA",
-    joinDate: "January 15, 2020",
-    avatar:
-      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60",
-  };
-
-  const leaveHistory = [
-    { id: 1, type: "Annual Leave", startDate: "2023-12-15", endDate: "2023-12-20", status: "Approved" },
-    { id: 2, type: "Sick Leave", startDate: "2023-11-05", endDate: "2023-11-07", status: "Rejected" },
-    { id: 3, type: "Special Leave", startDate: "2023-10-10", endDate: "2023-10-12", status: "Pending" },
-  ];
+  // Real Data
+  const { employee, history, loading, refetch } = useUserData();
 
   // State for modals
   const [showEditModal, setShowEditModal] = useState(false);
-  const [avatar, setAvatar] = useState(employeeData.avatar);
+  const [avatar, setAvatar] = useState("https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60");
+
+  // Update avatar when employee data loads
+  useEffect(() => {
+    if (employee?.avatar_url) {
+      setAvatar(employee.avatar_url);
+    }
+  }, [employee]);
+
+  // Calculate years of service
+  const getYearsOfService = (joinDate: string | undefined) => {
+    if (!joinDate) return "-";
+    const start = new Date(joinDate);
+    const now = new Date();
+    const diff = now.getTime() - start.getTime();
+    const years = diff / (1000 * 60 * 60 * 24 * 365.25);
+    return years.toFixed(1);
+  };
 
   // === Full Image Preview ===
   const [showFullImage, setShowFullImage] = useState(false);
   const previewAnim = useSharedValue(0);
 
-  // start/stop animation when showFullImage changes
   useEffect(() => {
     if (showFullImage) {
       previewAnim.value = withTiming(1, { duration: 250 });
@@ -80,7 +87,6 @@ export default function ProfileScreen() {
   };
 
   const closeFullImage = () => {
-    // animate out then hide
     previewAnim.value = withTiming(0, { duration: 200 });
     setTimeout(() => setShowFullImage(false), 200);
   };
@@ -93,6 +99,14 @@ export default function ProfileScreen() {
     opacity: previewAnim.value,
     transform: [{ scale: withSpring(previewAnim.value ? 1 : 0.85) }],
   }));
+
+  if (loading && !employee) {
+    return (
+        <View className={`flex-1 justify-center items-center ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}`}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+        </View>
+    );
+  }
 
   return (
     <View className={`${isDarkMode ? "bg-gray-900" : "bg-gray-100"} flex-1`}>
@@ -123,7 +137,7 @@ export default function ProfileScreen() {
       <ScrollView
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }} // Added padding for tab bar
       >
         {/* Profile Block */}
         <View
@@ -151,27 +165,34 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             <Text className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
-              {employeeData.name}
+              {formatValue(employee?.full_name)}
             </Text>
             <Text className={`${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-              {employeeData.position}
+              {formatValue(employee?.position)}
             </Text>
           </View>
 
           {/* Stats */}
           <View className="flex-row justify-around border-t pt-6" style={{ borderColor: isDarkMode ? "#374151" : "#E5E7EB" }}>
             <View className="items-center">
-              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>7.5</Text>
+              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+                {getYearsOfService(employee?.join_date)}
+              </Text>
               <Text className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>Years</Text>
             </View>
 
             <View className="items-center">
-              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>Engineering</Text>
+              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+                {formatValue(employee?.department)}
+              </Text>
               <Text className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>Department</Text>
             </View>
 
             <View className="items-center">
-              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>EMP-00789</Text>
+              <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
+                {/* Formatting ID to be shorter or just showing it */}
+                {employee?.id ? employee.id.substring(0, 8) : "-"}
+              </Text>
               <Text className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>ID</Text>
             </View>
           </View>
@@ -186,7 +207,7 @@ export default function ProfileScreen() {
               <Mail size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
                 <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Email</Text>
-                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{employeeData.email}</Text>
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{formatValue(employee?.email)}</Text>
               </View>
             </View>
 
@@ -194,7 +215,7 @@ export default function ProfileScreen() {
               <Phone size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
                 <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Phone</Text>
-                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{employeeData.phone}</Text>
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{formatValue(employee?.phone_number)}</Text>
               </View>
             </View>
 
@@ -202,7 +223,7 @@ export default function ProfileScreen() {
               <MapPin size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
                 <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Address</Text>
-                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{employeeData.address}</Text>
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{formatValue(employee?.address)}</Text>
               </View>
             </View>
 
@@ -210,7 +231,7 @@ export default function ProfileScreen() {
               <Calendar size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
                 <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Join Date</Text>
-                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{employeeData.joinDate}</Text>
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{formatValue(employee?.join_date)}</Text>
               </View>
             </View>
 
@@ -218,7 +239,7 @@ export default function ProfileScreen() {
               <Building size={20} color="#3B82F6" style={{ marginRight: 12 }} />
               <View>
                 <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Department</Text>
-                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{employeeData.department}</Text>
+                <Text className={isDarkMode ? "text-white" : "text-gray-800"}>{formatValue(employee?.department)}</Text>
               </View>
             </View>
           </View>
@@ -228,24 +249,27 @@ export default function ProfileScreen() {
         <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 shadow-md`}>
           <View className="flex-row items-center justify-between mb-4">
             <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>Leave History</Text>
-            <TouchableOpacity>
-              <Text className="text-blue-500 font-medium">View All</Text>
+            <TouchableOpacity onPress={() => router.push('/pengajuan')}>
+              <Text className="text-blue-500 font-medium">New Request</Text>
             </TouchableOpacity>
           </View>
 
           <View className="space-y-4">
-            {leaveHistory.map((leave, index) => (
-              <View key={leave.id} className={`flex-row justify-between items-center pb-4 ${index !== leaveHistory.length - 1 ? "border-b" : ""}`} style={{ borderColor: isDarkMode ? "#374151" : "#E5E7EB" }}>
+            {history.slice(0, 5).map((leave, index) => (
+              <View key={leave.id} className={`flex-row justify-between items-center pb-4 ${index !== Math.min(history.length, 5) - 1 ? "border-b" : ""}`} style={{ borderColor: isDarkMode ? "#374151" : "#E5E7EB" }}>
                 <View>
-                  <Text className={`font-medium ${isDarkMode ? "text-white" : "text-gray-800"}`}>{leave.type}</Text>
-                  <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{leave.startDate} to {leave.endDate}</Text>
+                  <Text className={`font-medium ${isDarkMode ? "text-white" : "text-gray-800"}`}>{leave.leave_type}</Text>
+                  <Text className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{leave.start_date} to {leave.end_date}</Text>
                 </View>
 
                 <View>
-                  <Text className={`px-3 py-1 rounded-full text-sm font-medium ${leave.status === "Approved" ? isDarkMode ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800" : leave.status === "Pending" ? isDarkMode ? "bg-yellow-900 text-yellow-200" : "bg-yellow-100 text-yellow-800" : isDarkMode ? "bg-red-900 text-red-200" : "bg-red-100 text-red-800"}`}>{leave.status}</Text>
+                  <Text className={`px-3 py-1 rounded-full text-sm font-medium ${leave.status === "Disetujui" ? isDarkMode ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800" : leave.status === "Menunggu" ? isDarkMode ? "bg-yellow-900 text-yellow-200" : "bg-yellow-100 text-yellow-800" : isDarkMode ? "bg-red-900 text-red-200" : "bg-red-100 text-red-800"}`}>{leave.status}</Text>
                 </View>
               </View>
             ))}
+            {history.length === 0 && (
+                <Text className={`text-center py-4 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>No leave history found</Text>
+            )}
           </View>
         </View>
       </ScrollView>

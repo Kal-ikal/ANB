@@ -119,9 +119,9 @@ export default function DashboardScreen() {
           setExitAppCount(prev => prev + 1);
 
           if (Platform.OS === 'android') {
-            ToastAndroid.show("Press back again to exit", ToastAndroid.SHORT);
+            ToastAndroid.show("Tekan sekali lagi untuk keluar", ToastAndroid.SHORT);
           } else {
-            Alert.alert("Exit App", "Press back again to exit.");
+            Alert.alert("Keluar Aplikasi", "Tekan sekali lagi untuk keluar");
           }
 
           setTimeout(() => {
@@ -129,7 +129,7 @@ export default function DashboardScreen() {
           }, 2000); // Reset after 2 seconds
 
           return true; // Prevent default behavior
-        } else if (exitAppCount === 1) {
+        } else if (exitAppCount >= 1) {
           BackHandler.exitApp();
           return true;
         }
@@ -337,7 +337,7 @@ export default function DashboardScreen() {
               Annual & Benefit
             </Text>
             <Text className="text-blue-100 text-sm mt-1">
-              {employee ? `${employee.full_name} • ${employee.job_title || 'Employee'}` : "Welcome User"}
+              {employee ? `${employee.full_name} • ${employee.role || '-'}` : "Welcome User"}
             </Text>
           </View>
 

@@ -7,10 +7,13 @@ export type Employee = {
   user_id: string;
   full_name: string;
   email: string;
-  job_title: string;
+  position: string; // Changed from job_title
   department: string;
   join_date: string;
   avatar_url?: string;
+  role: string; // Added role
+  phone_number?: string; // Added phone_number
+  address?: string; // Added address, though we know it might be missing
 };
 
 export type LeaveBalance = {

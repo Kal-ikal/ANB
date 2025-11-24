@@ -3,9 +3,8 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions,
-  Platform,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import {
@@ -19,23 +18,28 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   useSharedValue,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTabBarStore } from "@/hooks/useTabBarStore";
 
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
 // Tab configuration matching the routes
 const TABS = [
   { name: "home", icon: Home, label: "Home" },
-  { name: "pengajuan", icon: FileText, label: "Apply" },
-  { name: "konversi", icon: DollarSign, label: "Convert" },
+  { name: "pengajuan", icon: FileText, label: "Pengajuan" },
+  { name: "konversi", icon: DollarSign, label: "Konversi" },
   { name: "profile", icon: User, label: "Profile" },
   { name: "settings", icon: Settings, label: "Settings" },
 ];
 
-const TAB_HEIGHT = 60;
-const TAB_MARGIN = 20;
-const PRIMARY_COLOR = "#130057"; // Dark Navy for active indicator
-const INACTIVE_COLOR = "#94A3B8"; // Slate 400
+const PRIMARY_COLOR = "#130057"; // Deep Navy
+const ACTIVE_BG_COLOR = "#FFFFFF"; // White
+const ACTIVE_ICON_COLOR = "#130057"; // Deep Navy
+const INACTIVE_ICON_COLOR = "#FFFFFF"; // White
 
 export default function CustomTabBar({
   state,
@@ -43,74 +47,84 @@ export default function CustomTabBar({
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-
-  // Use Zustand store instead of Context
   const isVisible = useTabBarStore((state) => state.isVisible);
 
-  // Shared Value for animation
+  // Shared Value for visibility animation (Y-axis translation)
   const translateY = useSharedValue(0);
 
   // React to visibility changes
   useEffect(() => {
-    // If visible -> 0 (show)
-    // If hidden -> 100 + insets.bottom (hide below screen)
-    const hideValue = 100 + insets.bottom;
+    const hideValue = 100 + insets.bottom + 30; // height + bottom + padding
     translateY.value = withTiming(isVisible ? 0 : hideValue, {
       duration: 300,
     });
   }, [isVisible, insets.bottom]);
 
-  const animatedStyle = useAnimatedStyle(() => {
+  const animatedContainerStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: translateY.value }],
     };
   });
-
-  const onTabPress = (
-    routeKey: string,
-    routeName: string,
-    isFocused: boolean
-  ) => {
-    const event = navigation.emit({
-      type: "tabPress",
-      target: routeKey,
-      canPreventDefault: true,
-    });
-
-    if (!isFocused && !event.defaultPrevented) {
-      navigation.navigate(routeName);
-    }
-  };
 
   return (
     <Animated.View
       style={[
         styles.container,
         {
-            bottom: Platform.OS === 'ios' ? insets.bottom : 20,
+          bottom: Platform.OS === "ios" ? insets.bottom + 10 : 30,
         },
-        animatedStyle,
+        animatedContainerStyle,
       ]}
     >
-      {TABS.map((tab) => {
-        const routeIndex = state.routes.findIndex((r) => r.name === tab.name);
-        // If route not found in navigator, skip rendering
-        if (routeIndex === -1) return null;
+      {state.routes.map((route, index) => {
+        // Find configuration for this route
+        const tabConfig = TABS.find((t) => t.name === route.name);
 
-        const route = state.routes[routeIndex];
-        const isFocused = state.index === routeIndex;
+        // If route is not in our config (e.g. index, +not-found), skip it
+        if (!tabConfig) return null;
+
+        const isFocused = state.index === index;
+        const Icon = tabConfig.icon;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
 
         return (
-          <TouchableOpacity
-            key={tab.name}
-            onPress={() => onTabPress(route.key, tab.name, isFocused)}
-            style={styles.tabItem}
-            activeOpacity={0.7}
+          <AnimatedTouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            layout={LinearTransition.springify().mass(0.5)}
+            style={[
+              styles.tabItem,
+              { backgroundColor: isFocused ? ACTIVE_BG_COLOR : "transparent" },
+            ]}
           >
-            <View style={[styles.iconContainer, isFocused && styles.activeIconContainer]}>
-                <tab.icon size={24} color={isFocused ? "#FFFFFF" : INACTIVE_COLOR} />
+            <View style={styles.contentContainer}>
+                <Icon
+                size={22}
+                color={isFocused ? ACTIVE_ICON_COLOR : INACTIVE_ICON_COLOR}
+                />
+                {isFocused && (
+                <Animated.Text
+                    entering={FadeIn.duration(200)}
+                    exiting={FadeOut.duration(200)}
+                    style={styles.label}
+                    numberOfLines={1}
+                >
+                    {tabConfig.label}
+                </Animated.Text>
+                )}
             </View>
-          </TouchableOpacity>
+          </AnimatedTouchableOpacity>
         );
       })}
     </Animated.View>
@@ -120,36 +134,42 @@ export default function CustomTabBar({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: TAB_MARGIN,
-    right: TAB_MARGIN,
-    height: TAB_HEIGHT,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 30,
+    alignSelf: "center",
+    width: "80%",
+    backgroundColor: PRIMARY_COLOR,
+    borderRadius: 40,
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
     paddingHorizontal: 10,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
-    zIndex: 50, // Above content
+    elevation: 8,
+    zIndex: 100,
   },
   tabItem: {
-    flex: 1,
-    alignItems: "center",
+    height: 44,
+    borderRadius: 22, // Half of height for pill shape
     justifyContent: "center",
-    height: "100%",
+    alignItems: "center",
+    flexDirection: "row",
+    paddingHorizontal: 12,
   },
-  iconContainer: {
-    padding: 10,
-    borderRadius: 20,
+  contentContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
   },
-  activeIconContainer: {
-      backgroundColor: PRIMARY_COLOR,
+  label: {
+    color: ACTIVE_ICON_COLOR,
+    fontWeight: "600",
+    fontSize: 12,
+    marginLeft: 8,
   },
 });
