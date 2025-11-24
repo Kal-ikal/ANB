@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   Pressable,
   Dimensions,
   Platform,
+  BackHandler,
+  StyleSheet,
 } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import {
@@ -27,9 +29,7 @@ import Animated, {
   runOnUI,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const AnimatedTouchableOpacity =
-  Animated.createAnimatedComponent(TouchableOpacity);
+import { useTabBarStore } from "@/hooks/useTabBarStore";
 
 // Tab configuration matching the routes
 const TABS = [
@@ -41,8 +41,9 @@ const TABS = [
 ];
 
 const FAB_SIZE = 56;
-const EXPANDED_HEIGHT = 70;
 const PADDING_HORIZONTAL = 20;
+const PRIMARY_COLOR = "#130057"; // Dark Navy
+const SECONDARY_COLOR = "#FFFFFF"; // White
 
 export default function CustomTabBar({
   state,
@@ -55,19 +56,51 @@ export default function CustomTabBar({
   // Animation State
   const isExpanded = useSharedValue(0); // 0 = collapsed, 1 = expanded
 
+  // Global Store for TabBar State (for Back Handler Coordination)
+  const setGlobalExpanded = useTabBarStore((s) => s.setExpanded);
+
+  // Toggle Menu Function
   const toggleMenu = () => {
-    // Toggle between 0 and 1
-    isExpanded.value = withSpring(isExpanded.value === 0 ? 1 : 0, {
+    const nextValue = isExpanded.value === 0 ? 1 : 0;
+    isExpanded.value = withSpring(nextValue, {
       damping: 15,
       stiffness: 120,
     });
+    setGlobalExpanded(nextValue === 1);
   };
 
   const closeMenu = () => {
-    isExpanded.value = withTiming(0, { duration: 200 });
+    isExpanded.value = withTiming(0, { duration: 250 });
+    setGlobalExpanded(false);
   };
 
-  const onTabPress = (routeKey: string, routeName: string, isFocused: boolean) => {
+  // Back Handler to close menu if expanded
+  // We use useEffect because the TabBar is always mounted and we want this listener active
+  useEffect(() => {
+    const onBackPress = () => {
+      // We check the shared value or store.
+      // Since we are in JS thread here, using the store state is safe if synced.
+      // But checking shared value directly is better if possible, but reading .value on JS thread works.
+      if (isExpanded.value > 0.5) {
+        closeMenu();
+        return true; // Handle the back press
+      }
+      return false; // Propagate to next listener
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+
+    return () => subscription.remove();
+  }, []);
+
+  const onTabPress = (
+    routeKey: string,
+    routeName: string,
+    isFocused: boolean
+  ) => {
     const event = navigation.emit({
       type: "tabPress",
       target: routeKey,
@@ -79,12 +112,14 @@ export default function CustomTabBar({
     }
 
     // Auto collapse after navigation
-    closeMenu();
+    setTimeout(() => {
+        closeMenu();
+    }, 150);
   };
 
   // Animated Styles
 
-  // Container animates width from FAB size to full width
+  // Container animates width from FAB size to full width (minus padding)
   const containerStyle = useAnimatedStyle(() => {
     const width = interpolate(
       isExpanded.value,
@@ -96,7 +131,7 @@ export default function CustomTabBar({
     const borderRadius = interpolate(
       isExpanded.value,
       [0, 1],
-      [FAB_SIZE / 2, 20],
+      [FAB_SIZE / 2, 40],
       Extrapolation.CLAMP
     );
 
@@ -113,6 +148,7 @@ export default function CustomTabBar({
     return {
       transform: [{ rotate: `${rotate}deg` }],
       opacity,
+      position: "absolute",
     };
   });
 
@@ -123,27 +159,26 @@ export default function CustomTabBar({
     return {
       transform: [{ rotate: `${rotate}deg` }],
       opacity,
-      position: 'absolute',
+      position: "absolute",
     };
   });
 
   // Tab Items Opacity & Translation
   const tabsContainerStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(isExpanded.value, [0.7, 1], [0, 1]);
+    const opacity = interpolate(isExpanded.value, [0.6, 1], [0, 1]);
     const translateX = interpolate(isExpanded.value, [0, 1], [20, 0]);
 
     return {
       opacity,
       transform: [{ translateX }],
-      // Hide completely when collapsed to avoid touch events
-      display: isExpanded.value < 0.1 ? 'none' : 'flex',
+      display: isExpanded.value < 0.1 ? "none" : "flex",
     };
   });
 
   // Overlay to handle tap outside
   const overlayStyle = useAnimatedStyle(() => {
     return {
-      display: isExpanded.value > 0.1 ? "flex" : "none",
+      display: isExpanded.value > 0.05 ? "flex" : "none",
       opacity: isExpanded.value,
     };
   });
@@ -153,16 +188,7 @@ export default function CustomTabBar({
       {/* Transparent Overlay for Tap Outside */}
       <Animated.View
         style={[
-          {
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: Dimensions.get("window").height,
-            backgroundColor: "rgba(0,0,0,0.3)", // Slight dim
-            zIndex: 49,
-          },
+          styles.overlay,
           overlayStyle,
         ]}
       >
@@ -177,10 +203,10 @@ export default function CustomTabBar({
             bottom: Platform.OS === "ios" ? insets.bottom + 10 : 20,
             right: 20,
             height: FAB_SIZE,
-            backgroundColor: "#2563EB", // Primary Blue
+            backgroundColor: PRIMARY_COLOR,
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between", // Space between tabs and fab-toggle
+            justifyContent: "flex-end",
             overflow: "hidden",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },
@@ -197,59 +223,97 @@ export default function CustomTabBar({
           style={[
             {
               flex: 1,
-              flexDirection: 'row',
-              justifyContent: 'space-evenly',
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
               paddingLeft: 10,
-              paddingRight: FAB_SIZE + 5, // Make room for the toggle button
+              paddingRight: FAB_SIZE + 5,
+              height: "100%",
             },
-            tabsContainerStyle
+            tabsContainerStyle,
           ]}
         >
-          {TABS.map((tab) => {
-            const routeIndex = state.routes.findIndex(r => r.name === tab.name);
+          {TABS.map((tab, index) => {
+            const routeIndex = state.routes.findIndex(
+              (r) => r.name === tab.name
+            );
             if (routeIndex === -1) return null;
 
             const route = state.routes[routeIndex];
             const isFocused = state.index === routeIndex;
-            const color = isFocused ? "#FFFFFF" : "rgba(255,255,255,0.6)";
+
+            const activeBg = isFocused ? SECONDARY_COLOR : "transparent";
+            const iconColor = isFocused ? PRIMARY_COLOR : SECONDARY_COLOR;
+            const textColor = isFocused ? PRIMARY_COLOR : SECONDARY_COLOR;
 
             return (
               <TouchableOpacity
                 key={tab.name}
                 onPress={() => onTabPress(route.key, tab.name, isFocused)}
-                style={{ alignItems: 'center', paddingVertical: 8 }}
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "row",
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  backgroundColor: activeBg,
+                  borderRadius: 20,
+                  gap: 6,
+                }}
               >
-                <tab.icon size={20} color={color} />
-                <Text style={{ color, fontSize: 10, marginTop: 2, fontWeight: isFocused ? '600' : '400' }}>
-                  {tab.label}
-                </Text>
+                <tab.icon size={18} color={iconColor} />
+                {isFocused && (
+                  <Text
+                    style={{
+                      color: textColor,
+                      fontSize: 12,
+                      fontWeight: "600",
+                    }}
+                    numberOfLines={1}
+                  >
+                    {tab.label}
+                  </Text>
+                )}
               </TouchableOpacity>
             );
           })}
         </Animated.View>
 
-        {/* Toggle Button (Menu / Close) - Always Anchored Right */}
+        {/* Toggle Button (Menu / Close) */}
         <TouchableOpacity
           onPress={toggleMenu}
-          activeOpacity={0.9}
+          activeOpacity={0.8}
           style={{
             width: FAB_SIZE,
             height: FAB_SIZE,
             alignItems: "center",
             justifyContent: "center",
-            position: 'absolute',
+            position: "absolute",
             right: 0,
             top: 0,
           }}
         >
           <Animated.View style={fabIconStyle}>
-            <Menu color="white" size={24} />
+            <Menu color={SECONDARY_COLOR} size={24} />
           </Animated.View>
           <Animated.View style={closeIconStyle}>
-            <X color="white" size={24} />
+            <X color={SECONDARY_COLOR} size={24} />
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+    overlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: Dimensions.get("window").height,
+        backgroundColor: "rgba(0,0,0,0.3)",
+        zIndex: 49,
+    }
+});

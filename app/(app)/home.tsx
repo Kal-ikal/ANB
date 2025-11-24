@@ -32,6 +32,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserData } from "@/hooks/useUserData";
+import { useTabBarStore } from "@/hooks/useTabBarStore";
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -108,6 +109,12 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        // Check if Menu is Expanded. If so, let CustomTabBar handle it.
+        // Returning false bubbles the event up to the next listener (which should be CustomTabBar)
+        if (useTabBarStore.getState().isExpanded) {
+          return false;
+        }
+
         if (exitAppCount === 0) {
           setExitAppCount(prev => prev + 1);
 
