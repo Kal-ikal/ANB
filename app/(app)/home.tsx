@@ -20,6 +20,7 @@ import {
   DollarSign,
   User,
   Settings,
+  Bell,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { cssInterop } from "nativewind";
@@ -307,6 +308,12 @@ export default function DashboardScreen() {
                     thumbColor={isDarkMode ? "#3B82F6" : "#3B82F6"}
                   />
                 </View>
+                <TouchableOpacity
+                  className="ml-4"
+                  onPress={() => router.push('/(modals)/notifications')}
+                >
+                  <Bell color="white" size={24} />
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -544,7 +551,7 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Upcoming Leaves */}
+          {/* Recent Events */}
           <View
             className={`${
               isDarkMode ? "bg-gray-800" : "bg-white"
@@ -556,14 +563,20 @@ export default function DashboardScreen() {
                   isDarkMode ? "text-white" : "text-[#1A1D23]"
                 } text-lg font-bold`}
               >
-                Upcoming Leaves
+                Recent Events
               </Text>
-              <Calendar color={isDarkMode ? "#9CA3AF" : "#6B7280"} size={20} />
+              <TouchableOpacity onPress={() => router.push('/(modals)/notifications')}>
+                <Text className="text-blue-500 text-sm font-medium">View All</Text>
+              </TouchableOpacity>
             </View>
 
             {upcomingLeaves.length > 0 ? (
               upcomingLeaves.map((leave, index) => (
-                <View key={leave.id} className={`flex-row items-center ${index < upcomingLeaves.length - 1 ? 'mb-3' : ''}`}>
+                <TouchableOpacity
+                  key={leave.id}
+                  className={`flex-row items-center ${index < upcomingLeaves.length - 1 ? 'mb-3' : ''}`}
+                  onPress={() => router.push('/(modals)/notifications')}
+                >
                   <View className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: leave.color }} />
                   <View>
                     <Text
@@ -577,10 +590,10 @@ export default function DashboardScreen() {
                       {leave.dateString}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))
             ) : (
-              <Text className="text-gray-500 text-sm italic">No upcoming leaves</Text>
+              <Text className="text-gray-500 text-sm italic">No recent events</Text>
             )}
 
           </View>

@@ -259,8 +259,8 @@ export default function ProfileScreen() {
         <View className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl p-6 shadow-md`}>
           <View className="flex-row items-center justify-between mb-4">
             <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>Leave History</Text>
-            <TouchableOpacity onPress={() => router.push('/pengajuan')}>
-              <Text className="text-blue-500 font-medium">New Request</Text>
+            <TouchableOpacity onPress={() => router.push('/(modals)/leave-history')}>
+              <Text className="text-blue-500 font-medium">View All</Text>
             </TouchableOpacity>
           </View>
 

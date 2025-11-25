@@ -197,8 +197,8 @@ export default function SettingsScreen() {
               <Switch
                 value={isDarkMode}
                 onValueChange={handleToggleTheme}
-                trackColor={{ false: "#D1D5DB", true: "#6B7280" }}
-                thumbColor="#FFFFFF"
+                  trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
+                  thumbColor={isDarkMode ? "#3B82F6" : "#3B82F6"}
               />
             </View>
           </View>
@@ -225,8 +225,8 @@ export default function SettingsScreen() {
                 <Switch
                   value={notifications[type]}
                   onValueChange={() => toggleNotification(type)}
-                  trackColor={{ false: "#D1D5DB", true: "#6B7280" }}
-                  thumbColor={notifications[type] ? "#3B82F6" : "#FFFFFF"}
+                  trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
+                  thumbColor={isDarkMode ? "#3B82F6" : "#3B82F6"}
                 />
               </View>
             ))}

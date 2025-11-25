@@ -1,49 +1,118 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { X, Bell, Calendar } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
+
+type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  created_at: string;
+  read: boolean;
+  type: string;
+};
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Leave Approved",
-      message: "Your annual leave request for Dec 15-20 has been approved",
-      time: "2 hours ago",
-      read: false,
-      type: "approved",
-    },
-    {
-      id: 2,
-      title: "New Policy Update",
-      message: "Leave policy has been updated. Please review the changes",
-      time: "1 day ago",
-      read: true,
-      type: "info",
-    },
-  ]);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAsRead = (id: number) => {
+  useEffect(() => {
+    fetchNotifications();
+  }, [user]);
+
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Map database fields if necessary, assuming direct match for now
+      setNotifications(data || []);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    // Optimistic update
     setNotifications(
       notifications.map((notif) =>
         notif.id === id ? { ...notif, read: true } : notif
       )
     );
+
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", id);
+
+      if (error) console.error("Error marking read:", error);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications(notifications.map((notif) => ({ ...notif, read: true })));
+    if (!user) return;
+
+    try {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const clearAll = () => {
+  const clearAll = async () => {
+    // UI update first
     setNotifications([]);
+
+    // In a real app, you might "delete" or "archive" notifications.
+    // For now, let's just mark them all read or delete.
+    // Let's delete them for "Clear all".
+    if (!user) return;
+    try {
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("user_id", user.id);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = (now.getTime() - date.getTime()) / 1000; // seconds
+
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -68,7 +137,11 @@ export default function NotificationsScreen() {
 
       {/* Notifications List */}
       <ScrollView className="flex-1 px-4 pt-4">
-        {notifications.length === 0 ? (
+        {loading ? (
+           <View className="py-20">
+             <ActivityIndicator size="large" color="#3B82F6" />
+           </View>
+        ) : notifications.length === 0 ? (
           <View className="flex-1 justify-center items-center py-20">
             <Bell color="#9CA3AF" size={48} />
             <Text className="text-gray-500 mt-4 text-center">
@@ -101,7 +174,7 @@ export default function NotificationsScreen() {
                     {notification.message}
                   </Text>
                   <Text className="text-gray-400 text-xs mt-2">
-                    {notification.time}
+                    {formatTime(notification.created_at)}
                   </Text>
                 </View>
               </View>

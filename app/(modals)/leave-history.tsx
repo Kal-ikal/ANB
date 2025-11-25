@@ -4,6 +4,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import {
   ArrowLeft,
@@ -14,81 +15,60 @@ import {
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
-import { JSX, useMemo,useState } from "react";
-
+import { JSX, useMemo, useState, useEffect } from "react";
+import { useUserData } from "@/hooks/useUserData";
 
 interface LeaveItem {
-  id: number;
+  id: string;
   type: string;
   startDate: string;
   endDate: string;
-  status: "Approved" | "Pending" | "Rejected";
+  status: string;
   duration: string;
 }
 
 export default function LeaveHistoryScreen() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<string>("Semua");
+  const { history, loading } = useUserData();
 
-  const filters = ["Semua", "Approved", "Pending", "Rejected"];
+  const filters = ["Semua", "Disetujui", "Menunggu", "Ditolak"];
 
-  const [leaveHistory] = useState<LeaveItem[]>([
-    {
-      id: 1,
-      type: "Annual Leave",
-      startDate: "2023-12-15",
-      endDate: "2023-12-20",
-      status: "Approved",
-      duration: "6 days",
-    },
-    {
-      id: 2,
-      type: "Sick Leave",
-      startDate: "2023-11-05",
-      endDate: "2023-11-07",
-      status: "Approved",
-      duration: "3 days",
-    },
-    {
-      id: 3,
-      type: "Special Leave",
-      startDate: "2023-10-10",
-      endDate: "2023-10-12",
-      status: "Pending",
-      duration: "3 days",
-    },
-    {
-      id: 4,
-      type: "Annual Leave",
-      startDate: "2023-09-22",
-      endDate: "2023-09-25",
-      status: "Approved",
-      duration: "4 days",
-    },
-    {
-      id: 5,
-      type: "Annual Leave",
-      startDate: "2023-08-15",
-      endDate: "2023-08-20",
-      status: "Rejected",
-      duration: "6 days",
-    },
-  ]);
+  // Transform Supabase data to UI format
+  const leaveHistory: LeaveItem[] = useMemo(() => {
+    return history.map((req) => {
+      const start = new Date(req.start_date);
+      const end = new Date(req.end_date);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-  // ✅ FIX: Pisahkan logic ke helper function
+      return {
+        id: req.id,
+        type: req.leave_type,
+        startDate: req.start_date,
+        endDate: req.end_date,
+        status: req.status,
+        duration: `${days} days`,
+      };
+    });
+  }, [history]);
+
   const getStatusStyles = useMemo(() => {
     return (status: string) => {
       switch (status) {
+        case "Disetujui":
         case "Approved":
           return {
             bg: "bg-green-500",
             text: "text-white",
           };
+        case "Ditolak":
         case "Rejected":
           return {
             bg: "bg-red-500",
             text: "text-white",
           };
+        case "Menunggu":
         case "Pending":
           return {
             bg: "bg-orange-500",
@@ -105,10 +85,13 @@ export default function LeaveHistoryScreen() {
 
   const getStatusIcon = (status: string): JSX.Element => {
     switch (status) {
+      case "Disetujui":
       case "Approved":
         return <CheckCircle color="#10B981" size={20} />;
+      case "Ditolak":
       case "Rejected":
         return <XCircle color="#EF4444" size={20} />;
+      case "Menunggu":
       case "Pending":
         return <Clock color="#F59E0B" size={20} />;
       default:
@@ -149,7 +132,7 @@ export default function LeaveHistoryScreen() {
                   onPress={() => setActiveFilter(filter)}
                   className={`px-6 py-3 rounded-full mr-3 ${
                     activeFilter === filter
-                      ? "bg-red-500"
+                      ? "bg-blue-500"
                       : "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
                   }`}
                   activeOpacity={0.7}
@@ -174,7 +157,11 @@ export default function LeaveHistoryScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 24 }}
           >
-            {filteredHistory.length === 0 ? (
+            {loading ? (
+              <View className="py-20">
+                <ActivityIndicator size="large" color="#3B82F6" />
+              </View>
+            ) : filteredHistory.length === 0 ? (
               <View className="flex-1 justify-center items-center py-20">
                 <Calendar color="#9CA3AF" size={48} />
                 <Text className="text-gray-500 dark:text-gray-400 mt-4 text-center">
@@ -201,7 +188,6 @@ export default function LeaveHistoryScreen() {
                         </Text>
                       </View>
 
-                      {/* ✅ FIX: Pisahkan className jadi variable */}
                       <View className={`${statusStyles.bg} px-3 py-1 rounded-full`}>
                         <Text className={`${statusStyles.text} text-xs font-medium`}>
                           {leave.status}
