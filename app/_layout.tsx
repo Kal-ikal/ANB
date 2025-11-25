@@ -21,12 +21,18 @@ function NavigationBarConfig() {
     const configNav = async () => {
       if (Platform.OS === "android") {
         try {
-          // Force navigation bar to be visible and consistent
+          // Force navigation bar to be visible, absolute (floating), and transparent
+          await NavigationBar.setPositionAsync('absolute');
           await NavigationBar.setVisibilityAsync('visible');
           await NavigationBar.setBehaviorAsync('inset-touch');
-          // Always Black Background as per requirement
-          await NavigationBar.setBackgroundColorAsync("#000000");
-          // Adaptive Icons (usually Light/White on Black bg)
+          await NavigationBar.setBackgroundColorAsync("#00000000"); // Transparent
+
+          // Adaptive Icons (usually Light/White on Dark content, or Dark on Light content)
+          // Since we have a bottom tab bar, let's stick to 'light' or 'dark' based on general theme?
+          // User requirement: "System UI Strategy (Absolute & Safe)"
+          // The tab bar is floating, so the background behind the nav bar will be the app content.
+          // Let's set button style to light by default for better visibility on dark backgrounds,
+          // or we can adjust based on theme if needed later. For now, stick to standard/light.
           await NavigationBar.setButtonStyleAsync("light");
         } catch (e) {
           console.error("Failed to configure navigation bar:", e);
@@ -43,8 +49,8 @@ function NavigationBarConfig() {
       if (nextAppState === "active") {
          if (Platform.OS === "android") {
              NavigationBar.setVisibilityAsync('visible');
-             // Re-enforce black bg just in case
-             NavigationBar.setBackgroundColorAsync("#000000");
+             NavigationBar.setPositionAsync('absolute');
+             NavigationBar.setBackgroundColorAsync("#00000000");
          }
       }
     });
@@ -63,7 +69,8 @@ export default function RootLayout() {
         <AuthProvider>
           <ThemeProvider>
             <NavigationBarConfig />
-            <StatusBar style="dark" backgroundColor="#EFF6FF" />
+            {/* Transparent status bar for edge-to-edge look */}
+            <StatusBar translucent backgroundColor="transparent" style="dark" />
             <AuthGuard />
             <Stack
               screenOptions={{

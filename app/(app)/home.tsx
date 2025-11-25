@@ -1,5 +1,5 @@
 // app/(app)/home.tsx
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -34,6 +34,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUserData } from "@/hooks/useUserData";
 import { useTabBarStore } from "@/hooks/useTabBarStore";
 import { useScrollHandler } from "@/hooks/useScrollHandler";
+import { useScrollToTop } from "@react-navigation/native";
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -71,6 +72,10 @@ export default function DashboardScreen() {
   const [switchReady, setSwitchReady] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+
+  // Scroll Ref for Persistent Scroll & Scroll-To-Top
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
 
   // Auto-Hide Tab Bar Logic using Shared Hook
   const { onScroll } = useScrollHandler();
@@ -347,6 +352,7 @@ export default function DashboardScreen() {
 
       {/* Main Content */}
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }} // ✅ Padding for Auto-Hide Tab Bar

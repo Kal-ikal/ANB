@@ -24,6 +24,11 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTabBarStore } from "@/hooks/useTabBarStore";
+import { LinearGradient } from "expo-linear-gradient";
+import { cssInterop } from "nativewind";
+
+// NativeWind Fix
+cssInterop(LinearGradient, { className: "style" });
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -54,7 +59,8 @@ export default function CustomTabBar({
 
   // React to visibility changes
   useEffect(() => {
-    const hideValue = 100 + insets.bottom + 30; // height + bottom + padding
+    // Hide value: Height of bar (approx 60) + bottom padding
+    const hideValue = 100 + insets.bottom + 30;
     translateY.value = withTiming(isVisible ? 0 : hideValue, {
       duration: 300,
     });
@@ -71,7 +77,9 @@ export default function CustomTabBar({
       style={[
         styles.container,
         {
-          bottom: Platform.OS === "ios" ? insets.bottom + 10 : 30,
+          // Specific positioning fix: Use insets.bottom for BOTH platforms
+          // to avoid overlap with transparent system bar on Android
+          bottom: insets.bottom + 10,
         },
         animatedContainerStyle,
       ]}
@@ -95,6 +103,13 @@ export default function CustomTabBar({
 
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
+          } else if (isFocused) {
+            // Emit event for "Scroll to Top"
+            navigation.emit({
+                type: "tabPress",
+                target: route.key,
+                canPreventDefault: true,
+            });
           }
         };
 

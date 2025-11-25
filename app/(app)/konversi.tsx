@@ -56,7 +56,7 @@ export default function LeaveConversionScreen() {
   useFocusEffect(
     useCallback(() => {
       setConversionRequested(false);
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      scrollRef.current?.scrollTo({ y: 0, animated: false }); // Reset scroll position on focus
       fetchLeaveBalances();
 
       return () => {};
@@ -266,7 +266,7 @@ export default function LeaveConversionScreen() {
         ref={scrollRef}
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }} // Increased padding
         onScroll={onScroll}
         scrollEventThrottle={16}
       >

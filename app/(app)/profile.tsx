@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -33,6 +33,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useUserData } from "@/hooks/useUserData";
 import { useScrollHandler } from "@/hooks/useScrollHandler";
+import { useScrollToTop } from "@react-navigation/native";
 
 cssInterop(LinearGradient, { className: "style" });
 
@@ -47,6 +48,10 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
   const { onScroll } = useScrollHandler();
+
+  // Scroll Ref for Persistent Scroll & Scroll-To-Top
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
 
   // Real Data
   const { employee, history, loading, refetch } = useUserData();
@@ -137,6 +142,7 @@ export default function ProfileScreen() {
 
       {/* Main */}
       <ScrollView
+        ref={scrollRef}
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }} // Added padding for tab bar
