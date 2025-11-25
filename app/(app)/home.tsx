@@ -35,6 +35,7 @@ import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
 import { useUserData } from "@/hooks/useUserData";
 import { useTabBarStore } from "@/hooks/useTabBarStore";
+import { useScrollHandler } from "@/hooks/useScrollHandler";
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -73,9 +74,9 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
-  // Auto-Hide Tab Bar Logic using Zustand
+  // Auto-Hide Tab Bar Logic using Shared Hook
+  const { onScroll } = useScrollHandler();
   const setIsTabBarVisible = useTabBarStore((state) => state.setIsVisible);
-  const lastOffsetY = useRef(0);
 
   // Double Tap Exit State
   const [exitAppCount, setExitAppCount] = useState(0);
@@ -167,24 +168,6 @@ export default function DashboardScreen() {
       };
     }, [])
   );
-
-  // Scroll Handler for Auto-Hide
-  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const currentY = event.nativeEvent.contentOffset.y;
-    const diff = currentY - lastOffsetY.current;
-
-    // Threshold to avoid jitter
-    if (Math.abs(diff) > 20) {
-        if (diff > 0 && currentY > 50) {
-            // Scrolling Down -> Hide
-            setIsTabBarVisible(false);
-        } else if (diff < 0) {
-            // Scrolling Up -> Show
-            setIsTabBarVisible(true);
-        }
-        lastOffsetY.current = currentY;
-    }
-  };
 
   // Process data when hooks return data
   useEffect(() => {

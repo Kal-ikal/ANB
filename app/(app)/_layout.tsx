@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import CustomTabBar from '@/components/CustomTabBar';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AppLayout() {
+  const { isDarkMode } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
@@ -9,6 +12,10 @@ export default function AppLayout() {
         tabBarShowLabel: false,
         // Ensure the default tab bar is completely hidden from layout
         tabBarStyle: { display: 'none' },
+        // Fix white flash by matching background to theme
+        sceneStyle: {
+            backgroundColor: isDarkMode ? '#111827' : '#F7F7F7' // gray-900 or gray-50
+        },
       }}
       // Pass props to CustomTabBar to handle navigation state
       tabBar={(props) => <CustomTabBar {...props} />}

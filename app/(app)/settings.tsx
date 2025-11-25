@@ -30,6 +30,7 @@ import { StatusBar } from "expo-status-bar";
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
+import { useScrollHandler } from "@/hooks/useScrollHandler";
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -40,6 +41,7 @@ export default function SettingsScreen() {
   const { isDarkMode, toggleTheme } = useTheme();
   const { signOut } = useAuth();
   const { employee } = useUserData();
+  const { onScroll } = useScrollHandler();
 
   const [notifications, setNotifications] = useState({
     email: true,
@@ -126,7 +128,9 @@ export default function SettingsScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <View className="px-4 mt-6">
           

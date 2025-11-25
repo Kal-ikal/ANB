@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from '@/lib/supabase';
+import { useScrollHandler } from "@/hooks/useScrollHandler";
 
 cssInterop(LinearGradient, { className: "style" });
 
@@ -45,6 +46,7 @@ export default function LeaveConversionScreen() {
   const { isDarkMode: isDark } = useTheme();
   const [conversionRequested, setConversionRequested] = useState(false);
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
+  const { onScroll } = useScrollHandler();
   // Removed unused isLoading state
 
   // ✅ Ref untuk ScrollView
@@ -264,7 +266,9 @@ export default function LeaveConversionScreen() {
         ref={scrollRef}
         className="flex-1 px-4 mt-6"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         {/* Eligible Days */}
         <View

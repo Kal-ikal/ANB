@@ -29,6 +29,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from '@/lib/supabase';
 import { useUserData } from '@/hooks/useUserData';
+import { useScrollHandler } from "@/hooks/useScrollHandler";
 
 cssInterop(LinearGradient, { className: "style" });
 
@@ -74,6 +75,7 @@ export default function LeaveApplicationForm() {
   const insets = useSafeAreaInsets();
   const { isDarkMode: isDark } = useTheme();
   const { employee } = useUserData();
+  const { onScroll } = useScrollHandler();
 
   // ===========================
   // STATE
@@ -786,8 +788,10 @@ export default function LeaveApplicationForm() {
       <ScrollView
         ref={scrollRef}
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <View className="p-4">
           <View
