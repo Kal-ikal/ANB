@@ -1,5 +1,5 @@
 // app/(app)/home.tsx
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,8 +12,6 @@ import {
   Alert,
   RefreshControl,
   TouchableOpacity,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from "react-native";
 import { BarChart, LineChart } from "react-native-gifted-charts";
 import {
