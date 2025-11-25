@@ -13,12 +13,11 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 type Notification = {
-  id: string;
-  title: string;
+  id: number;
   message: string;
   created_at: string;
-  read: boolean;
-  type: string;
+  is_read: boolean;
+  link_to?: string;
 };
 
 export default function NotificationsScreen() {
@@ -43,7 +42,6 @@ export default function NotificationsScreen() {
 
       if (error) throw error;
 
-      // Map database fields if necessary, assuming direct match for now
       setNotifications(data || []);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -52,18 +50,18 @@ export default function NotificationsScreen() {
     }
   };
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = async (id: number) => {
     // Optimistic update
     setNotifications(
       notifications.map((notif) =>
-        notif.id === id ? { ...notif, read: true } : notif
+        notif.id === id ? { ...notif, is_read: true } : notif
       )
     );
 
     try {
       const { error } = await supabase
         .from("notifications")
-        .update({ read: true })
+        .update({ is_read: true })
         .eq("id", id);
 
       if (error) console.error("Error marking read:", error);
@@ -73,13 +71,13 @@ export default function NotificationsScreen() {
   };
 
   const markAllAsRead = async () => {
-    setNotifications(notifications.map((notif) => ({ ...notif, read: true })));
+    setNotifications(notifications.map((notif) => ({ ...notif, is_read: true })));
     if (!user) return;
 
     try {
       await supabase
         .from("notifications")
-        .update({ read: true })
+        .update({ is_read: true })
         .eq("user_id", user.id);
     } catch (e) {
       console.error(e);
@@ -87,12 +85,7 @@ export default function NotificationsScreen() {
   };
 
   const clearAll = async () => {
-    // UI update first
     setNotifications([]);
-
-    // In a real app, you might "delete" or "archive" notifications.
-    // For now, let's just mark them all read or delete.
-    // Let's delete them for "Clear all".
     if (!user) return;
     try {
       await supabase
@@ -113,6 +106,13 @@ export default function NotificationsScreen() {
     if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
     return date.toLocaleDateString();
+  };
+
+  const getTitle = (message: string) => {
+    if (message.toLowerCase().includes("disetujui") || message.toLowerCase().includes("approved")) return "Leave Approved";
+    if (message.toLowerCase().includes("ditolak") || message.toLowerCase().includes("rejected")) return "Leave Rejected";
+    if (message.toLowerCase().includes("mengajukan")) return "New Request";
+    return "Notification";
   };
 
   return (
@@ -153,7 +153,7 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               key={notification.id}
               className={`${
-                notification.read ? "bg-white" : "bg-blue-100"
+                notification.is_read ? "bg-white" : "bg-blue-100"
               } rounded-xl p-4 mb-3 shadow-sm border border-gray-200`}
               onPress={() => markAsRead(notification.id)}
             >
@@ -164,9 +164,9 @@ export default function NotificationsScreen() {
                 <View className="flex-1">
                   <View className="flex-row justify-between">
                     <Text className="font-bold text-gray-900">
-                      {notification.title}
+                      {getTitle(notification.message)}
                     </Text>
-                    {!notification.read && (
+                    {!notification.is_read && (
                       <View className="bg-blue-500 w-2 h-2 rounded-full mt-2" />
                     )}
                   </View>
