@@ -1,11 +1,14 @@
-import { useCallback, useEffect } from 'react';
-import { BackHandler } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import { BackHandler, Platform, ToastAndroid, Alert } from 'react-native';
 import { usePathname, router } from 'expo-router';
 import { useSmartNavigation } from './useSmartNavigation';
 
 export function useCustomBackHandler() {
   const pathname = usePathname();
   const { backToRoot, navigateToRoot } = useSmartNavigation();
+
+  // Ref to track double-back exit state
+  const canExitRef = useRef(false);
 
   const backHandler = useCallback(() => {
     // ✅ Case 1: Jika di landing page (root) - exit app
@@ -30,12 +33,27 @@ export function useCustomBackHandler() {
       return true;
     }
 
-    // ✅ Case 4: Jika di app tabs (home, profile, dll)
-    // REMOVED explicit exitApp logic here to allow screens (like home.tsx) to handle it themselves via useFocusEffect.
-    // If the screen handles it, this listener won't be called (LIFO).
-    // If the screen doesn't handle it (e.g. profile), we fall through to default behavior.
-    // Note: If we want consistent exit from any tab root, we might need it, but user specifically wants double-tap on Home.
-    // Other tabs will likely fall through to 'router.back()' which might pop the stack or do nothing if at top of stack.
+    // ✅ Case 4: Jika di Dashboard (Home) - Double Tap to Exit
+    // Centralized logic here to prevent conflicts with default fallback
+    if (pathname === '/home' || pathname === '/(app)/home') {
+        if (canExitRef.current) {
+            BackHandler.exitApp();
+            return true;
+        }
+
+        canExitRef.current = true;
+        if (Platform.OS === 'android') {
+            ToastAndroid.show("Tekan sekali lagi untuk keluar", ToastAndroid.SHORT);
+        } else {
+            Alert.alert("Keluar Aplikasi", "Tekan sekali lagi untuk keluar");
+        }
+
+        setTimeout(() => {
+            canExitRef.current = false;
+        }, 2000);
+
+        return true;
+    }
 
     // ✅ Case 5: Jika di modal - dismiss
     if (pathname.startsWith('/(modals)/')) {

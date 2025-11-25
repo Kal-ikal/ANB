@@ -6,10 +6,6 @@ import {
   ScrollView,
   Switch,
   Dimensions,
-  BackHandler,
-  ToastAndroid,
-  Platform,
-  Alert,
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
@@ -81,9 +77,6 @@ export default function DashboardScreen() {
   const { onScroll } = useScrollHandler();
   const setIsTabBarVisible = useTabBarStore((state) => state.setIsVisible);
 
-  // Double Tap Exit Logic (Ref-based to prevent re-renders/unsubscriptions)
-  const canExitRef = useRef(false);
-
   // Use the centralized hook
   const { employee, balances, history, refetch } = useUserData();
 
@@ -114,37 +107,6 @@ export default function DashboardScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
-
-  // Double Back to Exit Logic
-  useFocusEffect(
-    useCallback(() => {
-      const onBackPress = () => {
-        if (canExitRef.current) {
-          BackHandler.exitApp();
-          return true;
-        }
-
-        canExitRef.current = true;
-        if (Platform.OS === 'android') {
-          ToastAndroid.show("Tekan sekali lagi untuk keluar", ToastAndroid.SHORT);
-        } else {
-          Alert.alert("Keluar Aplikasi", "Tekan sekali lagi untuk keluar");
-        }
-
-        setTimeout(() => {
-          canExitRef.current = false;
-        }, 2000);
-
-        return true; // Prevent default behavior (bubbling to root stack)
-      };
-
-      // Register listener
-      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-      // Cleanup
-      return () => subscription.remove();
-    }, []) // Empty dependency array ensures listener is stable and not removed/re-added
-  );
 
   // Prefetch routes
   useEffect(() => {
@@ -341,8 +303,8 @@ export default function DashboardScreen() {
                   <Switch
                     value={isDarkMode}
                     onValueChange={toggleTheme}
-                    trackColor={{ true: "#6B7280", false: "#D1D5DB" }}
-                    thumbColor="#FFFFFF"
+                    trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
+                    thumbColor={isDarkMode ? "#3B82F6" : "#3B82F6"}
                   />
                 </View>
               </View>
