@@ -72,9 +72,6 @@ export default function SettingsScreen() {
 
   const handleToggleTheme = () => {
     toggleTheme();
-    Alert.alert("Theme Changed", `Switched to ${!isDarkMode ? 'dark' : 'light'} mode`, [
-      { text: "OK" },
-    ]);
   };
 
   const toggleNotification = (type: "email" | "push" | "sms") => {
