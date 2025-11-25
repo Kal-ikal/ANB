@@ -30,11 +30,12 @@ export function useCustomBackHandler() {
       return true;
     }
 
-    // ✅ Case 4: Jika di app tabs (home, profile, dll) - exit app
-    if (pathname.startsWith('/(app)/') && !router.canGoBack()) {
-      BackHandler.exitApp();
-      return true;
-    }
+    // ✅ Case 4: Jika di app tabs (home, profile, dll)
+    // REMOVED explicit exitApp logic here to allow screens (like home.tsx) to handle it themselves via useFocusEffect.
+    // If the screen handles it, this listener won't be called (LIFO).
+    // If the screen doesn't handle it (e.g. profile), we fall through to default behavior.
+    // Note: If we want consistent exit from any tab root, we might need it, but user specifically wants double-tap on Home.
+    // Other tabs will likely fall through to 'router.back()' which might pop the stack or do nothing if at top of stack.
 
     // ✅ Case 5: Jika di modal - dismiss
     if (pathname.startsWith('/(modals)/')) {

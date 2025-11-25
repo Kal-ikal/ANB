@@ -150,14 +150,14 @@ const styles = StyleSheet.create({
   container: {
     position: "absolute",
     alignSelf: "center",
-    width: "80%",
+    width: "90%",
     backgroundColor: PRIMARY_COLOR,
     borderRadius: 40,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,

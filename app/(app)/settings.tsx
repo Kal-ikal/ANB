@@ -31,6 +31,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
 import { useScrollHandler } from "@/hooks/useScrollHandler";
+import LogoutModal from '@/components/LogoutModal';
 
 cssInterop(LinearGradient, { className: "style" });
 cssInterop(Switch, { className: false });
@@ -42,6 +43,8 @@ export default function SettingsScreen() {
   const { signOut } = useAuth();
   const { employee } = useUserData();
   const { onScroll } = useScrollHandler();
+
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const [notifications, setNotifications] = useState({
     email: true,
@@ -82,21 +85,17 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut();
-            // AuthGuard will handle redirection to Landing ('/')
-          } catch (error: any) {
-            Alert.alert("Error", error.message || "Failed to logout");
-          }
-        },
-      },
-    ]);
+    setShowLogoutModal(true);
+  };
+
+  const onConfirmLogout = async () => {
+    try {
+      setShowLogoutModal(false);
+      await signOut();
+      // AuthGuard will handle redirection
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to logout");
+    }
   };
 
   return (
@@ -202,7 +201,7 @@ export default function SettingsScreen() {
                 value={isDarkMode}
                 onValueChange={handleToggleTheme}
                 trackColor={{ false: "#D1D5DB", true: "#6B7280" }}
-                thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
+                thumbColor="#FFFFFF"
               />
             </View>
           </View>
@@ -316,6 +315,13 @@ export default function SettingsScreen() {
 
         </View>
       </ScrollView>
+
+      <LogoutModal
+        visible={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={onConfirmLogout}
+        isDarkMode={isDarkMode}
+      />
     </View>
   );
 }

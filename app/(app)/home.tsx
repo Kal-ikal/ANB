@@ -81,8 +81,8 @@ export default function DashboardScreen() {
   const { onScroll } = useScrollHandler();
   const setIsTabBarVisible = useTabBarStore((state) => state.setIsVisible);
 
-  // Double Tap Exit State
-  const [exitAppCount, setExitAppCount] = useState(0);
+  // Double Tap Exit Logic (Ref-based to prevent re-renders/unsubscriptions)
+  const canExitRef = useRef(false);
 
   // Use the centralized hook
   const { employee, balances, history, refetch } = useUserData();
@@ -119,30 +119,31 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        if (exitAppCount === 0) {
-          setExitAppCount(prev => prev + 1);
-
-          if (Platform.OS === 'android') {
-            ToastAndroid.show("Tekan sekali lagi untuk keluar", ToastAndroid.SHORT);
-          } else {
-            Alert.alert("Keluar Aplikasi", "Tekan sekali lagi untuk keluar");
-          }
-
-          setTimeout(() => {
-            setExitAppCount(0);
-          }, 2000); // Reset after 2 seconds
-
-          return true; // Prevent default behavior
-        } else if (exitAppCount >= 1) {
+        if (canExitRef.current) {
           BackHandler.exitApp();
           return true;
         }
-        return false;
+
+        canExitRef.current = true;
+        if (Platform.OS === 'android') {
+          ToastAndroid.show("Tekan sekali lagi untuk keluar", ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Keluar Aplikasi", "Tekan sekali lagi untuk keluar");
+        }
+
+        setTimeout(() => {
+          canExitRef.current = false;
+        }, 2000);
+
+        return true; // Prevent default behavior (bubbling to root stack)
       };
 
+      // Register listener
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      // Cleanup
       return () => subscription.remove();
-    }, [exitAppCount])
+    }, []) // Empty dependency array ensures listener is stable and not removed/re-added
   );
 
   // Prefetch routes
@@ -341,7 +342,7 @@ export default function DashboardScreen() {
                     value={isDarkMode}
                     onValueChange={toggleTheme}
                     trackColor={{ true: "#6B7280", false: "#D1D5DB" }}
-                    thumbColor={isDarkMode ? "#3B82F6" : "#FFFFFF"}
+                    thumbColor="#FFFFFF"
                   />
                 </View>
               </View>
