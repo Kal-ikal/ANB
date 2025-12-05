@@ -1,7 +1,270 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronRight, Calendar, BarChart2, Users, Shield } from 'lucide-react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Retro Space Game Component
+const RetroGame = () => {
+  const [playerX, setPlayerX] = useState(SCREEN_WIDTH / 2 - 20);
+  const [score, setScore] = useState(0);
+  const [enemies, setEnemies] = useState<Array<{ x: number; y: number; id: number }>>([]);
+  const [bullets, setBullets] = useState<Array<{ x: number; y: number; id: number }>>([]);
+  const [stars, setStars] = useState<Array<{ x: number; y: number; size: number }>>([]);
+
+  const gameLoop = useRef<NodeJS.Timeout | null>(null);
+  const bulletCounter = useRef(0);
+  const enemyCounter = useRef(0);
+
+  // Initialize stars
+  useEffect(() => {
+    const newStars = Array.from({ length: 100 }, (_, i) => ({
+      x: Math.random() * SCREEN_WIDTH,
+      y: Math.random() * 400,
+      size: Math.random() * 2 + 1,
+    }));
+    setStars(newStars);
+  }, []);
+
+  // Game loop
+  useEffect(() => {
+    gameLoop.current = setInterval(() => {
+      // Move bullets
+      setBullets(prev => prev
+        .map(b => ({ ...b, y: b.y - 10 }))
+        .filter(b => b.y > 0)
+      );
+
+      // Move enemies
+      setEnemies(prev => prev
+        .map(e => ({ ...e, y: e.y + 2 }))
+        .filter(e => e.y < 400)
+      );
+
+      // Spawn new enemy randomly
+      if (Math.random() < 0.02) {
+        setEnemies(prev => [...prev, {
+          x: Math.random() * (SCREEN_WIDTH - 40),
+          y: 0,
+          id: enemyCounter.current++
+        }]);
+      }
+
+      // Check collisions
+      setBullets(prevBullets => {
+        const remainingBullets = [...prevBullets];
+
+        setEnemies(prevEnemies => {
+          const remainingEnemies = prevEnemies.filter(enemy => {
+            const hit = remainingBullets.some(bullet =>
+              Math.abs(bullet.x - enemy.x) < 30 &&
+              Math.abs(bullet.y - enemy.y) < 30
+            );
+
+            if (hit) {
+              setScore(s => s + 10);
+              const hitBulletIndex = remainingBullets.findIndex(bullet =>
+                Math.abs(bullet.x - enemy.x) < 30 &&
+                Math.abs(bullet.y - enemy.y) < 30
+              );
+              if (hitBulletIndex !== -1) {
+                remainingBullets.splice(hitBulletIndex, 1);
+              }
+            }
+
+            return !hit;
+          });
+
+          return remainingEnemies;
+        });
+
+        return remainingBullets;
+      });
+    }, 50);
+
+    return () => {
+      if (gameLoop.current) clearInterval(gameLoop.current);
+    };
+  }, []);
+
+  const movePlayer = (direction: 'left' | 'right') => {
+    setPlayerX(prev => {
+      if (direction === 'left') {
+        return Math.max(0, prev - 30);
+      } else {
+        return Math.min(SCREEN_WIDTH - 40, prev + 30);
+      }
+    });
+  };
+
+  const shoot = () => {
+    setBullets(prev => [...prev, {
+      x: playerX + 15,
+      y: 340,
+      id: bulletCounter.current++
+    }]);
+  };
+
+  return (
+    <View className="w-full h-96 bg-gray-900 rounded-2xl overflow-hidden relative">
+      {/* Stars background */}
+      {stars.map((star, i) => (
+        <View
+          key={i}
+          style={{
+            position: 'absolute',
+            left: star.x,
+            top: star.y,
+            width: star.size,
+            height: star.size,
+            backgroundColor: '#fff',
+            borderRadius: star.size / 2,
+            opacity: 0.8,
+          }}
+        />
+      ))}
+
+      {/* Score */}
+      <View className="absolute top-4 left-4 z-10">
+        <Text className="text-white font-bold text-xl">Score: {score}</Text>
+      </View>
+
+      {/* Enemies */}
+      {enemies.map(enemy => (
+        <View
+          key={enemy.id}
+          style={{
+            position: 'absolute',
+            left: enemy.x,
+            top: enemy.y,
+            width: 40,
+            height: 40,
+          }}
+        >
+          {/* Pixel art enemy (space invader style) */}
+          <View className="flex-1">
+            <View className="flex-row justify-center">
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-red-500" />
+            </View>
+            <View className="flex-row justify-center">
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-transparent" />
+            </View>
+            <View className="flex-row justify-center">
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-red-500" />
+            </View>
+            <View className="flex-row justify-center">
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-red-500" />
+            </View>
+            <View className="flex-row justify-center">
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-transparent" />
+              <View className="w-2 h-2 bg-red-500" />
+              <View className="w-2 h-2 bg-transparent" />
+            </View>
+          </View>
+        </View>
+      ))}
+
+      {/* Bullets */}
+      {bullets.map(bullet => (
+        <View
+          key={bullet.id}
+          style={{
+            position: 'absolute',
+            left: bullet.x,
+            top: bullet.y,
+            width: 4,
+            height: 12,
+            backgroundColor: '#00ff00',
+            borderRadius: 2,
+          }}
+        />
+      ))}
+
+      {/* Player ship (pixel art style) */}
+      <View
+        style={{
+          position: 'absolute',
+          left: playerX,
+          bottom: 40,
+          width: 40,
+          height: 40,
+        }}
+      >
+        <View className="flex-1">
+          <View className="flex-row justify-center">
+            <View className="w-2 h-2 bg-transparent" />
+            <View className="w-2 h-2 bg-transparent" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-transparent" />
+            <View className="w-2 h-2 bg-transparent" />
+          </View>
+          <View className="flex-row justify-center">
+            <View className="w-2 h-2 bg-transparent" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-transparent" />
+          </View>
+          <View className="flex-row justify-center">
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-blue-400" />
+          </View>
+          <View className="flex-row justify-center">
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-transparent" />
+            <View className="w-2 h-2 bg-blue-400" />
+            <View className="w-2 h-2 bg-transparent" />
+            <View className="w-2 h-2 bg-blue-400" />
+          </View>
+        </View>
+      </View>
+
+      {/* Controls */}
+      <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-4 px-4">
+        <TouchableOpacity
+          onPress={() => movePlayer('left')}
+          className="bg-blue-500 py-3 px-8 rounded-lg"
+        >
+          <Text className="text-white font-bold text-lg">←</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={shoot}
+          className="bg-green-500 py-3 px-8 rounded-lg"
+        >
+          <Text className="text-white font-bold text-lg">FIRE</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => movePlayer('right')}
+          className="bg-blue-500 py-3 px-8 rounded-lg"
+        >
+          <Text className="text-white font-bold text-lg">→</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 
 const LandingScreen = () => {
   const router = useRouter();
@@ -54,16 +317,16 @@ const LandingScreen = () => {
           <Text className="text-3xl font-bold text-center text-gray-800 mb-4">
             Simplify Your Leave Management
           </Text>
-          <Text className="text-gray-600 text-center text-lg mb-8 max-w-md">
+          <Text className="text-gray-600 text-center text-lg mb-4 max-w-md">
             Track, request, and manage your leave entitlements with ease. All in one place.
           </Text>
-          
-          <View className="w-full h-64 rounded-2xl overflow-hidden mb-8">
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1480694313141-fce5e697ee25?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8c21hcnRwaG9uZXxlbnwwfHwwfHx8MA%3D%3D' }}
-              className="w-full h-full"
-              resizeMode="cover"
-            />
+
+          <Text className="text-blue-600 text-center font-bold mb-4">
+            🎮 Play a quick game while you explore!
+          </Text>
+
+          <View className="w-full mb-8">
+            <RetroGame />
           </View>
           
           <TouchableOpacity 
