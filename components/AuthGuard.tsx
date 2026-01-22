@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useSegments, useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { View, ActivityIndicator } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 export function AuthGuard() {
   const { session, loading } = useAuth();
+  const { isDarkMode } = useTheme();
   const segments = useSegments() as string[];
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
@@ -48,7 +50,13 @@ export function AuthGuard() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#EFF6FF' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: isDarkMode ? '#111827' : '#F7F7F7',
+        }}>
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
